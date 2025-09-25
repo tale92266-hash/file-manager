@@ -1,7 +1,13 @@
 let currentPath = '/';
-let hideHidden = true; // State variable to manage hidden files
+let hideHidden = true;
 let selectedFilePath = '';
 let selectedFileName = '';
+
+// Helper function to get the base path from the URL
+function getBasePath() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('path') || '/';
+}
 
 // Navigation functions
 function navigateToPath(path) {
@@ -12,36 +18,14 @@ function refreshFiles() {
     window.location.reload();
 }
 
+function getUserHome() {
+    return '/home/' + (process.env.USER || 'user');
+}
+
 // Sidebar toggle function
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('active');
-}
-
-// Close sidebar on any sidebar link click (for mobile)
-document.querySelectorAll('.sidebar a').forEach(item => {
-    item.onclick = () => {
-        document.getElementById('sidebar').classList.remove('active');
-    };
-});
-
-// Toggle hidden files
-function toggleHidden() {
-    hideHidden = !hideHidden;
-    const hiddenFiles = document.querySelectorAll('.hidden-file');
-    const toggleBtn = document.getElementById('hideToggle');
-    
-    hiddenFiles.forEach(file => {
-        if (hideHidden) {
-            file.classList.add('hide');
-        } else {
-            file.classList.remove('hide');
-        }
-    });
-
-    if (toggleBtn) {
-        toggleBtn.innerHTML = hideHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
-    }
 }
 
 // File filtering
@@ -50,24 +34,18 @@ function filterFiles(type) {
     
     fileItems.forEach(item => {
         const fileName = item.querySelector('.file-name').textContent.toLowerCase();
-        const isHidden = item.classList.contains('hidden-file');
         let shouldShow = true;
         
-        switch(type) {
-            case 'code':
-                shouldShow = fileName.match(/\.(js|html|css|json|py|java|cpp|c|php|rb|go)$/);
-                break;
-            case 'images':
+        if (type !== 'all' && type !== 'hidden') {
+            shouldShow = fileName.match(/\.(js|html|css|json|py|java|cpp|c|php|rb|go)$/);
+            if (type === 'images') {
                 shouldShow = fileName.match(/\.(jpg|jpeg|png|gif|svg|bmp|webp)$/);
-                break;
-            case 'all':
-            default:
-                shouldShow = true;
-                break;
+            }
         }
         
-        // Agar file hidden hai aur hidden files ko hide karna hai, to show mat karo
-        if (isHidden && hideHidden) {
+        if (type === 'hidden') {
+            shouldShow = item.classList.contains('hidden-file');
+        } else if (hideHidden && item.classList.contains('hidden-file')) {
             shouldShow = false;
         }
 
@@ -88,16 +66,21 @@ function showContextMenu(event, filePath, fileName) {
     selectedFileName = fileName;
     
     const contextMenu = document.getElementById('contextMenu');
-    contextMenu.style.left = event.pageX + 'px';
-    contextMenu.style.top = event.pageY + 'px';
-    contextMenu.classList.add('active');
+    if (contextMenu) {
+        contextMenu.style.left = event.pageX + 'px';
+        contextMenu.style.top = event.pageY + 'px';
+        contextMenu.classList.add('active');
+    }
     
     // Hide menu when clicking elsewhere
     document.addEventListener('click', hideContextMenu, { once: true });
 }
 
 function hideContextMenu() {
-    document.getElementById('contextMenu').classList.remove('active');
+    const contextMenu = document.getElementById('contextMenu');
+    if (contextMenu) {
+        contextMenu.classList.remove('active');
+    }
 }
 
 function renameFile() {
@@ -174,7 +157,7 @@ function createItem(type) {
         return;
     }
     
-    const currentPath = new URLSearchParams(window.location.search).get('path') || '/';
+    const currentPath = getBasePath();
     
     fetch('/create', {
         method: 'POST',
@@ -218,7 +201,7 @@ function uploadFiles() {
         return;
     }
     
-    const currentPath = new URLSearchParams(window.location.search).get('path') || '/';
+    const currentPath = getBasePath();
     const formData = new FormData();
     
     for (let file of files) {
@@ -244,6 +227,64 @@ function uploadFiles() {
         showNotification('Error: ' + error.message, 'error');
     });
 }
+
+// Editor modal functions
+function openFileEditor(filePath, fileName) {
+    const editorModal = document.getElementById('editorModal');
+    const editorTitle = document.getElementById('editorTitle');
+    const codeEditor = document.getElementById('codeEditor');
+
+    selectedFilePath = filePath;
+    editorTitle.textContent = fileName;
+    editorModal.classList.add('active');
+
+    // Fetch file content and populate editor
+    fetch(`/file-content?path=${encodeURIComponent(filePath)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.content) {
+                codeEditor.value = data.content;
+            } else {
+                codeEditor.value = 'Error loading file content.';
+                showNotification('Error loading file: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            codeEditor.value = 'Error loading file content.';
+            showNotification('Network error: ' + error.message, 'error');
+        });
+}
+
+function closeFileEditor() {
+    const editorModal = document.getElementById('editorModal');
+    editorModal.classList.remove('active');
+}
+
+function saveFile() {
+    const codeEditor = document.getElementById('codeEditor');
+    const content = codeEditor.value;
+
+    fetch('/save-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            filePath: selectedFilePath,
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('File saved successfully!', 'success');
+        } else {
+            showNotification('Error saving file: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error: ' + error.message, 'error');
+    });
+}
+
 
 // Notification system
 function showNotification(message, type = 'info') {
@@ -292,6 +333,77 @@ function showNotification(message, type = 'info') {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
+    // Event listeners for file items
+    document.querySelectorAll('.file-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const path = item.dataset.path;
+            const type = item.dataset.type;
+            if (type === 'folder') {
+                navigateToPath(path);
+            } else {
+                openFileEditor(path, item.querySelector('.file-name').textContent);
+            }
+        });
+    });
+
+    // Event listeners for breadcrumb links
+    document.querySelectorAll('.breadcrumb-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateToPath(item.dataset.path);
+        });
+    });
+
+    // Event listeners for sidebar links
+    document.querySelectorAll('.quick-link').forEach(item => {
+        item.addEventListener('click', () => {
+            navigateToPath(item.dataset.path);
+        });
+    });
+
+    document.querySelectorAll('.filter-item').forEach(item => {
+        item.addEventListener('click', () => {
+            filterFiles(item.dataset.filter);
+        });
+    });
+    
+    // Header button event listeners
+    const sidebarToggleBtn = document.getElementById('sidebarToggle');
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', toggleSidebar);
+    }
+    
+    const newButton = document.getElementById('newButton');
+    if (newButton) {
+        newButton.addEventListener('click', showCreateModal);
+    }
+    
+    const uploadButton = document.getElementById('uploadButton');
+    if (uploadButton) {
+        uploadButton.addEventListener('click', showUploadModal);
+    }
+    
+    // Modal button event listeners
+    const closeCreateModalBtn = document.getElementById('closeCreateModal');
+    if (closeCreateModalBtn) {
+        closeCreateModalBtn.addEventListener('click', closeCreateModal);
+    }
+    
+    const closeUploadModalBtn = document.getElementById('closeUploadModal');
+    if (closeUploadModalBtn) {
+        closeUploadModalBtn.addEventListener('click', closeUploadModal);
+    }
+
+    const saveFileButton = document.getElementById('saveFileButton');
+    if (saveFileButton) {
+        saveFileButton.addEventListener('click', saveFile);
+    }
+
+    const closeEditorButton = document.getElementById('closeEditorButton');
+    if (closeEditorButton) {
+        closeEditorButton.addEventListener('click', closeFileEditor);
+    }
+    
     // Update file count
     const fileCount = document.querySelectorAll('.file-item').length;
     const fileCountElement = document.getElementById('fileCount');
@@ -300,18 +412,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Update current path display
-    const currentPath = new URLSearchParams(window.location.search).get('path') || '/';
     const currentPathDisplay = document.getElementById('currentPathDisplay');
     if (currentPathDisplay) {
-        currentPathDisplay.textContent = currentPath;
+        currentPathDisplay.textContent = getBasePath();
     }
-    
-    // Initialize hidden files toggle
-    toggleHidden();
-
-    // Event listeners for file filters
-    document.getElementById('filterAll').addEventListener('click', () => filterFiles('all'));
-    document.getElementById('filterCode').addEventListener('click', () => filterFiles('code'));
-    document.getElementById('filterImages').addEventListener('click', () => filterFiles('images'));
-    document.getElementById('hideToggle').addEventListener('click', toggleHidden);
 });
