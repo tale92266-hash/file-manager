@@ -277,7 +277,14 @@ document.querySelectorAll('.file-item').forEach(item => {
         if (type === 'folder') {
             navigateToPath(path);
         } else {
-            openFileEditor(path, item.querySelector('.file-name').textContent);
+            // Firing a custom event instead of calling a function directly
+            const openEditorEvent = new CustomEvent('open-editor', {
+                detail: {
+                    filePath: path,
+                    fileName: item.querySelector('.file-name').textContent
+                }
+            });
+            document.dispatchEvent(openEditorEvent);
         }
     });
 });
