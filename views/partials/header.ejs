@@ -7,11 +7,11 @@
             </h1>
         </div>
         <div class="header-right">
-            <button id="newButton" class="btn-primary">
+            <button onclick="showCreateModal()" class="btn-primary">
                 <i class="fas fa-plus"></i>
                 <span class="btn-text">New</span>
             </button>
-            <button id="uploadButton" class="btn-secondary">
+            <button onclick="showUploadModal()" class="btn-secondary">
                 <i class="fas fa-upload"></i>
                 <span class="btn-text">Upload</span>
             </button>
@@ -19,21 +19,22 @@
     </div>
 </header>
 
+<!-- Create Modal -->
 <div id="createModal" class="modal">
     <div class="modal-content small">
         <div class="modal-header">
             <h3>Create New</h3>
-            <button id="closeCreateModal" class="btn-close">
+            <button onclick="closeCreateModal()" class="btn-close">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         <div class="modal-body">
             <input type="text" id="newItemName" placeholder="Enter name..." class="input-field">
             <div class="button-group">
-                <button id="createFileButton" class="btn-primary">
+                <button onclick="createItem('file')" class="btn-primary">
                     <i class="fas fa-file"></i> File
                 </button>
-                <button id="createFolderButton" class="btn-secondary">
+                <button onclick="createItem('folder')" class="btn-secondary">
                     <i class="fas fa-folder"></i> Folder
                 </button>
             </div>
@@ -41,17 +42,18 @@
     </div>
 </div>
 
+<!-- Upload Modal -->
 <div id="uploadModal" class="modal">
     <div class="modal-content small">
         <div class="modal-header">
             <h3>Upload File</h3>
-            <button id="closeUploadModal" class="btn-close">
+            <button onclick="closeUploadModal()" class="btn-close">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         <div class="modal-body">
             <input type="file" id="fileInput" class="file-input" multiple>
-            <button id="uploadFilesButton" class="btn-primary full-width">
+            <button onclick="uploadFiles()" class="btn-primary full-width">
                 <i class="fas fa-upload"></i> Upload Selected Files
             </button>
         </div>
