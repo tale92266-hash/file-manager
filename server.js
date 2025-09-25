@@ -27,18 +27,50 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', './views');
 
-// Helper function to get file icon
+// Helper function to get file icon based on file type
 function getFileIcon(fileName, isDirectory) {
-  if (isDirectory) return '📁';
+  if (isDirectory) return 'bi bi-folder-fill'; // Folder icon
   
   const ext = path.extname(fileName).toLowerCase();
-  const iconMap = {
-    '.js': '📜', '.html': '🌐', '.css': '🎨', '.json': '📋',
-    '.txt': '📄', '.md': '📝', '.png': '🖼️', '.jpg': '🖼️',
-    '.gif': '🖼️', '.mp4': '🎬', '.mp3': '🎵', '.pdf': '📕'
-  };
-  
-  return iconMap[ext] || '📄';
+  switch (ext) {
+    case '.js':
+      return 'bi bi-filetype-js';
+    case '.html':
+    case '.htm':
+      return 'bi bi-filetype-html';
+    case '.css':
+      return 'bi bi-filetype-css';
+    case '.json':
+      return 'bi bi-filetype-json';
+    case '.txt':
+      return 'bi bi-file-earmark-text';
+    case '.md':
+      return 'bi bi-file-earmark-code';
+    case '.py':
+      return 'bi bi-filetype-py';
+    case '.env':
+      return 'bi bi-gear';
+    case '.sh':
+    case '.bash':
+      return 'bi bi-terminal';
+    case '.png':
+    case '.jpg':
+    case '.jpeg':
+    case '.gif':
+    case '.svg':
+      return 'bi bi-file-earmark-image';
+    case '.mp4':
+    case '.mov':
+    case '.avi':
+      return 'bi bi-file-earmark-play';
+    case '.mp3':
+    case '.wav':
+      return 'bi bi-file-earmark-music';
+    case '.pdf':
+      return 'bi bi-file-earmark-pdf';
+    default:
+      return 'bi bi-file-earmark';
+  }
 }
 
 // Main route
@@ -60,9 +92,10 @@ app.get('/', async (req, res) => {
           isDirectory: file.isDirectory(),
           size: file.isDirectory() ? '-' : formatFileSize(stats.size),
           // removed 'modified' attribute
-          icon: getFileIcon(file.name, file.isDirectory()),
+          iconClass: getFileIcon(file.name, file.isDirectory()),
           isHidden: file.name.startsWith('.'),
-          fullPath: filePath
+          fullPath: filePath,
+          fileExtension: file.isDirectory() ? 'folder' : path.extname(file.name).toLowerCase().substring(1)
         };
       })
     );
