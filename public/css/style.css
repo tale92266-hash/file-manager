@@ -165,11 +165,16 @@ body {
     z-index: 1001;
     min-width: 160px;
     overflow: hidden;
-    display: none;
+    visibility: hidden;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
 }
 
 .context-menu.active {
-    display: block;
+    visibility: visible;
+    opacity: 1;
+    transform: scale(1);
 }
 
 .menu-item {
@@ -262,6 +267,126 @@ body {
 
 .btn-close:hover {
     color: #333;
+}
+
+/* File Input Styling (for upload modal) */
+.file-input {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 0.5rem;
+    width: 100%;
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 1rem;
+}
+
+.file-input::-webkit-file-upload-button {
+    visibility: hidden;
+}
+
+.file-input::before {
+    content: 'Choose File(s)...';
+    display: inline-block;
+    background: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    outline: none;
+    white-space: nowrap;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.file-input:hover::before {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.file-input:active::before {
+    background: #3c77c0;
+    transform: translateY(0);
+}
+
+/* Hidden file input for custom styling */
+.hidden-file-input {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+
+/* Styled label for the hidden file input */
+.file-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: #e0e0e0; /* Match btn-secondary */
+    color: #333;
+    width: 100%;
+}
+
+.file-label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Advanced Drag & Drop Zone */
+.drop-zone {
+    border: 2px dashed #95a5a6;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    color: #7f8c8d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.drop-zone:hover {
+    border-color: #3498db;
+    background: #f5f7fa;
+}
+
+.drop-zone.active {
+    background: #eaf3ff;
+    border-color: #3498db;
+    color: #2980b9;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+.drop-zone .drop-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    color: #7f8c8d;
+    transition: color 0.3s ease;
+}
+
+.drop-zone.active .drop-icon {
+    color: #3498db;
+}
+
+.drop-zone p {
+    margin: 0.5rem 0;
+    font-weight: 500;
+}
+
+.drop-zone .file-label {
+    margin-top: 1rem;
+    width: auto;
 }
 
 /* Footer */

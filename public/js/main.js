@@ -2,8 +2,10 @@ let currentPath = '/';
 let hideHidden = true;
 let selectedFilePath = '';
 let selectedFileName = '';
+let selectedFileType = ''; // New variable to store the type (file/folder)
 let originalContent = ''; // Variable to store original file content
 let isProcessRunning = false; // Consolidated flag for any ongoing process (export/import)
+let activeContextMenu = null; // Track the currently active context menu
 
 // Helper function to get the base path from the URL
 function getBasePath() {
@@ -65,27 +67,50 @@ function showContextMenu(event, filePath, fileName) {
         showNotification('An operation is running. Actions are disabled.', 'error');
         return;
     }
-
+    
+    // Close any existing context menu
+    if (activeContextMenu) {
+        hideContextMenu(activeContextMenu);
+    }
+    
     event.preventDefault();
     event.stopPropagation();
     
     selectedFilePath = filePath;
     selectedFileName = fileName;
+    selectedFileType = event.currentTarget.closest('.file-item').dataset.type;
     
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
-        // Check if menu would go off-screen
+        // Get dimensions
         const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
         const menuWidth = contextMenu.offsetWidth;
+        const menuHeight = contextMenu.offsetHeight;
         let leftPosition = event.pageX;
+        let topPosition = event.pageY;
 
-        if (leftPosition + menuWidth > windowWidth) {
-            leftPosition = windowWidth - menuWidth - 20; // 20px padding from the right edge
+        // Adjust left position
+        if (leftPosition + menuWidth > windowWidth - 20) {
+            leftPosition = windowWidth - menuWidth - 20;
+        }
+        // Adjust top position
+        if (topPosition + menuHeight > windowHeight - 20) {
+            topPosition = windowHeight - menuHeight - 20;
+        }
+        
+        // Ensure menu is not off-screen to the left or top
+        if (leftPosition < 20) {
+            leftPosition = 20;
+        }
+        if (topPosition < 20) {
+            topPosition = 20;
         }
         
         contextMenu.style.left = leftPosition + 'px';
-        contextMenu.style.top = event.pageY + 'px';
+        contextMenu.style.top = topPosition + 'px';
         contextMenu.classList.add('active');
+        activeContextMenu = contextMenu; // Set the currently active menu
     }
     
     // Hide menu when clicking elsewhere
@@ -96,6 +121,7 @@ function hideContextMenu() {
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
         contextMenu.classList.remove('active');
+        activeContextMenu = null; // Clear the active menu reference
     }
 }
 
@@ -175,6 +201,31 @@ function copyPath() {
     });
 }
 
+// New Download function
+function downloadFile() {
+    hideContextMenu();
+    if (!selectedFilePath) {
+        showNotification('No item selected to download.', 'error');
+        return;
+    }
+    
+    let downloadUrl = '';
+    if (selectedFileType === 'folder') {
+        downloadUrl = `/download-folder?path=${encodeURIComponent(selectedFilePath)}`;
+        showNotification(`Downloading folder '${selectedFileName}' as a zip file...`, 'info');
+    } else {
+        downloadUrl = `/download?path=${encodeURIComponent(selectedFilePath)}`;
+        showNotification(`Downloading file '${selectedFileName}'...`, 'info');
+    }
+
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = selectedFileName; // This helps suggest the file name
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 // Create modal functions
 function showCreateModal() {
     if (isProcessRunning) {
@@ -237,6 +288,9 @@ function showUploadModal() {
         return;
     }
     document.getElementById('uploadModal').classList.add('active');
+    document.getElementById('fileInput').value = ''; // Reset file input
+    document.getElementById('fileLabel').textContent = 'Choose File(s)...'; // Reset label
+    document.getElementById('dropZoneUpload').classList.remove('active'); // Remove active class on open
 }
 
 function closeUploadModal() {
@@ -489,6 +543,8 @@ function showImportModal() {
     document.getElementById('importLoadingState').style.display = 'none';
     document.getElementById('uploadZipButton').style.display = 'block';
     document.getElementById('zipFileInput').value = '';
+    document.getElementById('zipFileLabel').textContent = 'Choose File...'; // Reset label text
+    document.getElementById('dropZone').classList.remove('active'); // Remove active class on open
 }
 
 function closeImportModal() {
@@ -628,6 +684,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('renameMenuItem').addEventListener('click', renameFile);
     document.getElementById('deleteMenuItem').addEventListener('click', deleteFile);
     document.getElementById('copyPathMenuItem').addEventListener('click', copyPath);
+    document.getElementById('downloadMenuItem').addEventListener('click', downloadFile);
+
 
     // Event listeners for rename modal buttons
     document.getElementById('closeRenameModal').addEventListener('click', () => document.getElementById('renameModal').classList.remove('active'));
@@ -825,6 +883,84 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveButton.disabled = false;
             } else {
                 saveButton.disabled = true;
+            }
+        });
+    }
+
+    // Handle file name display for import modal
+    const zipFileInput = document.getElementById('zipFileInput');
+    if (zipFileInput) {
+        zipFileInput.addEventListener('change', () => {
+            const fileNameDisplay = document.getElementById('zipFileLabel');
+            if (zipFileInput.files.length > 0) {
+                fileNameDisplay.textContent = zipFileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = 'Choose File...';
+            }
+        });
+        
+        const dropZone = document.getElementById('dropZone');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('active');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('active');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('active');
+            
+            const files = e.dataTransfer.files;
+            zipFileInput.files = files; // Assign the dropped files to the input element
+            
+            const fileNameDisplay = document.getElementById('zipFileLabel');
+            if (zipFileInput.files.length > 0) {
+                fileNameDisplay.textContent = zipFileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = 'Choose File...';
+            }
+        });
+    }
+    
+    // Handle file name display for upload modal
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', () => {
+            const fileNameDisplay = document.getElementById('fileLabel');
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = `${fileInput.files.length} file(s) selected`;
+            } else {
+                fileNameDisplay.textContent = 'Choose File(s)...';
+            }
+        });
+        
+        const dropZoneUpload = document.getElementById('dropZoneUpload');
+        
+        dropZoneUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZoneUpload.classList.add('active');
+        });
+
+        dropZoneUpload.addEventListener('dragleave', () => {
+            dropZoneUpload.classList.remove('active');
+        });
+
+        dropZoneUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZoneUpload.classList.remove('active');
+            
+            const files = e.dataTransfer.files;
+            fileInput.files = files;
+            
+            const fileNameDisplay = document.getElementById('fileLabel');
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = `${fileInput.files.length} file(s) selected`;
+            } else {
+                fileNameDisplay.textContent = 'Choose File(s)...';
             }
         });
     }

@@ -273,6 +273,43 @@ app.post('/import', upload.single('zipFile'), async (req, res) => {
 });
 
 
+// New Download file route
+app.get('/download', (req, res) => {
+  const filePath = req.query.path;
+  res.download(filePath, (err) => {
+      if (err) {
+          console.error(`Error downloading file: ${err.message}`);
+          if (err.code === 'ENOENT') {
+              res.status(404).send('File not found!');
+          } else {
+              res.status(500).send('Error downloading file.');
+          }
+      }
+  });
+});
+
+// New Download folder route (as ZIP)
+app.get('/download-folder', (req, res) => {
+    const folderPath = req.query.path;
+    const folderName = path.basename(folderPath);
+
+    const archive = archiver('zip', {
+        zlib: { level: 9 }
+    });
+
+    res.attachment(`${folderName}.zip`);
+
+    archive.on('error', (err) => {
+        console.error(`Error zipping folder: ${err.message}`);
+        res.status(500).send('Error zipping folder.');
+    });
+
+    archive.pipe(res);
+    archive.directory(folderPath, false); // false means don't include the folder's base directory in the zip
+    archive.finalize();
+});
+
+
 // Helper function
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';
