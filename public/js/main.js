@@ -1,5 +1,5 @@
 let currentPath = '/';
-let hideHidden = true;
+let hideHidden = true; // State variable to manage hidden files
 let selectedFilePath = '';
 let selectedFileName = '';
 
@@ -12,9 +12,18 @@ function refreshFiles() {
     window.location.reload();
 }
 
-function getUserHome() {
-    return '/home/' + (process.env.USER || 'user');
+// Sidebar toggle function
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('active');
 }
+
+// Close sidebar on any sidebar link click (for mobile)
+document.querySelectorAll('.sidebar a').forEach(item => {
+    item.onclick = () => {
+        document.getElementById('sidebar').classList.remove('active');
+    };
+});
 
 // Toggle hidden files
 function toggleHidden() {
@@ -25,12 +34,14 @@ function toggleHidden() {
     hiddenFiles.forEach(file => {
         if (hideHidden) {
             file.classList.add('hide');
-            toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
         } else {
             file.classList.remove('hide');
-            toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
         }
     });
+
+    if (toggleBtn) {
+        toggleBtn.innerHTML = hideHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+    }
 }
 
 // File filtering
@@ -39,6 +50,7 @@ function filterFiles(type) {
     
     fileItems.forEach(item => {
         const fileName = item.querySelector('.file-name').textContent.toLowerCase();
+        const isHidden = item.classList.contains('hidden-file');
         let shouldShow = true;
         
         switch(type) {
@@ -48,15 +60,17 @@ function filterFiles(type) {
             case 'images':
                 shouldShow = fileName.match(/\.(jpg|jpeg|png|gif|svg|bmp|webp)$/);
                 break;
-            case 'hidden':
-                shouldShow = item.classList.contains('hidden-file');
-                break;
             case 'all':
             default:
                 shouldShow = true;
                 break;
         }
         
+        // Agar file hidden hai aur hidden files ko hide karna hai, to show mat karo
+        if (isHidden && hideHidden) {
+            shouldShow = false;
+        }
+
         if (shouldShow) {
             item.style.display = 'flex';
         } else {
@@ -294,4 +308,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize hidden files toggle
     toggleHidden();
+
+    // Event listeners for file filters
+    document.getElementById('filterAll').addEventListener('click', () => filterFiles('all'));
+    document.getElementById('filterCode').addEventListener('click', () => filterFiles('code'));
+    document.getElementById('filterImages').addEventListener('click', () => filterFiles('images'));
+    document.getElementById('hideToggle').addEventListener('click', toggleHidden);
 });
