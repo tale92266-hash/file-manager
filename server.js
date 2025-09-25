@@ -4,10 +4,10 @@ const path = require('path');
 const multer = require('multer');
 const mime = require('mime-types');
 const archiver = require('archiver');
-const gitignore = require('gitignore-parser');
+const parseGitignore = require('parse-gitignore-ts').default;
 
 const app = express();
-const PORT = process.env.env || 3000;
+const PORT = process.env.PORT || 3000;
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -141,11 +141,11 @@ app.get('/export-project', async (req, res) => {
     });
 
     try {
-        let ignore = null;
+        let ignoreList = [];
         const gitignorePath = path.join(currentPath, '.gitignore');
         if (await fs.pathExists(gitignorePath)) {
             const ignoreFileContent = await fs.readFile(gitignorePath, 'utf8');
-            ignore = gitignore.parse(ignoreFileContent);
+            ignoreList = parseGitignore(ignoreFileContent);
         }
 
         const addFilesToArchive = async (dirPath, rootPath) => {
@@ -155,7 +155,13 @@ app.get('/export-project', async (req, res) => {
                 const filePath = path.join(dirPath, file.name);
                 const relativePath = path.relative(rootPath, filePath);
 
-                if (ignore && !ignore.accepts(relativePath)) {
+                // Use the ignore list to check for ignored files/folders
+                const isIgnored = ignoreList.some(pattern => {
+                    const regex = new RegExp(pattern.replace(/\./g, '\\.').replace(/\*/g, '.*'));
+                    return regex.test(relativePath);
+                });
+
+                if (isIgnored) {
                     continue;
                 }
 
