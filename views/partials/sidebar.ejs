@@ -1,0 +1,57 @@
+<aside class="sidebar">
+    <div class="sidebar-content">
+        <div class="sidebar-section">
+            <h3 class="section-title">Quick Access</h3>
+            <div class="quick-links">
+                <div class="quick-link" onclick="navigateToPath('/')">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </div>
+                <div class="quick-link" onclick="navigateToPath('/tmp')">
+                    <i class="fas fa-folder"></i>
+                    <span>Temp</span>
+                </div>
+                <div class="quick-link" onclick="navigateToPath(getUserHome())">
+                    <i class="fas fa-user"></i>
+                    <span>User</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3 class="section-title">File Types</h3>
+            <div class="file-filters">
+                <div class="filter-item" onclick="filterFiles('all')">
+                    <span class="filter-icon">📄</span>
+                    <span>All Files</span>
+                </div>
+                <div class="filter-item" onclick="filterFiles('code')">
+                    <span class="filter-icon">💻</span>
+                    <span>Code Files</span>
+                </div>
+                <div class="filter-item" onclick="filterFiles('images')">
+                    <span class="filter-icon">🖼️</span>
+                    <span>Images</span>
+                </div>
+                <div class="filter-item" onclick="filterFiles('hidden')">
+                    <span class="filter-icon">👁️</span>
+                    <span>Hidden</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3 class="section-title">Terminal Info</h3>
+            <div class="terminal-info">
+                <div class="info-item">
+                    <strong>Current Path:</strong>
+                    <code id="currentPathDisplay"><%= currentPath %></code>
+                </div>
+                <div class="info-item">
+                    <strong>Files Count:</strong>
+                    <span id="fileCount"><%= files.length %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>
