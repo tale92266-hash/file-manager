@@ -244,13 +244,29 @@ function openFileEditor(filePath, fileName) {
     editorTitle.textContent = fileName;
     editorModal.classList.add('active');
 
+    // Show loading state
+    codeEditor.value = '';
+    codeEditor.classList.add('loading');
+    codeEditor.readOnly = true;
+
     // Fetch file content and populate editor
     fetch(`/file-content?path=${encodeURIComponent(filePath)}`)
         .then(response => response.json())
         .then(data => {
-            if (data.content) {
-                codeEditor.value = data.content;
-                originalContent = data.content; // Original content ko save karein
+            // Remove loading state
+            codeEditor.classList.remove('loading');
+            codeEditor.readOnly = false;
+
+            if (data.content !== null && data.content !== undefined) {
+                if (data.content.trim() === '') {
+                    // Empty file case
+                    codeEditor.value = 'This file is empty. You can start typing to add content.';
+                    originalContent = '';
+                } else {
+                    // File has content
+                    codeEditor.value = data.content;
+                    originalContent = data.content;
+                }
                 saveButton.disabled = true; // Initially button ko disable karein
             } else {
                 codeEditor.value = 'Error loading file content.';
@@ -259,6 +275,9 @@ function openFileEditor(filePath, fileName) {
             }
         })
         .catch(error => {
+            // Remove loading state and show error
+            codeEditor.classList.remove('loading');
+            codeEditor.readOnly = false;
             codeEditor.value = 'Error loading file content.';
             showNotification('Network error: ' + error.message, 'error');
             saveButton.disabled = true;
@@ -394,13 +413,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Event listeners for sidebar links
     document.querySelectorAll('.quick-link').forEach(item => {
-        item.addEventListener('click', () => {
-            const path = item.dataset.path;
-            if (path) {
-                navigateToPath(path);
-            }
+            item.addEventListener('click', () => {
+                const path = item.dataset.path;
+                if (path) {
+                    navigateToPath(path);
+                }
+            });
         });
-    });
 
     document.querySelectorAll('.filter-item').forEach(item => {
         item.addEventListener('click', () => {
