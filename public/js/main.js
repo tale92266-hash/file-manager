@@ -453,6 +453,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (uploadFilesButton) {
         uploadFilesButton.addEventListener('click', uploadFiles);
     }
+
+    // Sidebar outside click to close
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggleBtn = document.getElementById('sidebarToggle');
+        
+        if (!sidebar.contains(event.target) && !sidebarToggleBtn.contains(event.target) && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+        }
+    });
+
+    // Sidebar close button event listener
+    const closeSidebarButton = document.getElementById('closeSidebarButton');
+    if (closeSidebarButton) {
+        closeSidebarButton.addEventListener('click', toggleSidebar);
+    }
     
     // Update file count
     const fileCount = document.querySelectorAll('.file-item').length;
