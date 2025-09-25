@@ -16,15 +16,35 @@
     position: relative;
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
     user-select: none;
+    color: #333; /* Default color for all items */
 }
 
 .file-item:hover {
     background-color: #f7f7f7;
 }
 
+/* Parent Directory specific styles */
+.parent-dir-item {
+    background-color: #f0f0f0;
+    font-weight: 600;
+}
+
+.parent-dir-item i {
+    color: #4a90e2; /* Blue color for back icon */
+}
+
+/* Directory specific styles */
+.directory-item i {
+    color: #f39c12; /* Orange for folders */
+}
+
+/* File specific styles */
+.file-item:not(.parent-dir-item) i {
+    color: #667eea; /* Purple color for files */
+}
+
 .file-item i {
     font-size: 1.5rem;
-    color: #666;
     min-width: 32px;
     text-align: center;
 }
