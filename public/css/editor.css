@@ -221,6 +221,15 @@
     cursor: pointer;
 }
 
+/* Disabled button state */
+.editor-footer .btn:disabled {
+    background: #aaa !important;
+    cursor: not-allowed;
+    box-shadow: none !important;
+    transform: none !important;
+    opacity: 0.6;
+}
+
 .editor-footer .btn::before {
     content: '';
     position: absolute;
