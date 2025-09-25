@@ -420,51 +420,6 @@ body {
     color: #333;
 }
 
-/* Editor */
-.editor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    background: #2d3748;
-    color: white;
-}
-
-.editor-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-}
-
-.code-editor-area {
-    width: 100%;
-    height: calc(100vh - 120px);
-    border: none;
-    outline: none;
-    padding: 1rem;
-    font-family: 'Monaco', 'Consolas', monospace;
-    font-size: 14px;
-    line-height: 1.6;
-    resize: none;
-    background: #1a202c;
-    color: #e2e8f0;
-}
-
-.editor-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    background: #343a40;
-    color: white;
-}
-
-.footer-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
 /* Footer */
 .app-footer {
     background: #343a40;
