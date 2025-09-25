@@ -419,6 +419,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Event listeners for context menu items
+    document.getElementById('renameMenuItem').addEventListener('click', renameFile);
+    document.getElementById('deleteMenuItem').addEventListener('click', deleteFile);
+    document.getElementById('copyPathMenuItem').addEventListener('click', copyPath);
+
     // Event listeners for breadcrumb links
     document.querySelectorAll('.breadcrumb-item').forEach(item => {
         item.addEventListener('click', (e) => {
