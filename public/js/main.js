@@ -3,6 +3,7 @@ let hideHidden = true;
 let selectedFilePath = '';
 let selectedFileName = '';
 let originalContent = ''; // Variable to store original file content
+let isProcessRunning = false; // Consolidated flag for any ongoing process (export/import)
 
 // Helper function to get the base path from the URL
 function getBasePath() {
@@ -12,6 +13,10 @@ function getBasePath() {
 
 // Navigation functions
 function navigateToPath(path) {
+    if (isProcessRunning) {
+        showNotification('An operation is running. Please wait for it to complete.', 'error');
+        return;
+    }
     window.location.href = `/?path=${encodeURIComponent(path)}`;
 }
 
@@ -56,6 +61,11 @@ function filterFiles(type) {
 
 // Context menu functions
 function showContextMenu(event, filePath, fileName) {
+    if (isProcessRunning) {
+        showNotification('An operation is running. Actions are disabled.', 'error');
+        return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     
@@ -167,6 +177,10 @@ function copyPath() {
 
 // Create modal functions
 function showCreateModal() {
+    if (isProcessRunning) {
+        showNotification('An operation is running. Actions are disabled.', 'error');
+        return;
+    }
     document.getElementById('createModal').classList.add('active');
 }
 
@@ -218,6 +232,10 @@ function createItem(type) {
 
 // Upload modal functions
 function showUploadModal() {
+    if (isProcessRunning) {
+        showNotification('An operation is running. Actions are disabled.', 'error');
+        return;
+    }
     document.getElementById('uploadModal').classList.add('active');
 }
 
@@ -263,6 +281,10 @@ function uploadFiles() {
 
 // Editor modal functions
 function openFileEditor(filePath, fileName) {
+    if (isProcessRunning) {
+        showNotification('An operation is running. Actions are disabled.', 'error');
+        return;
+    }
     const editorModal = document.getElementById('editorModal');
     const editorTitle = document.getElementById('editorTitle');
     const codeEditor = document.getElementById('codeEditor');
@@ -403,6 +425,128 @@ function cancelEdit() {
     openFileEditor(selectedFilePath, document.getElementById('editorTitle').textContent);
     showNotification('Changes cancelled!', 'info');
 }
+
+// New Export Project function
+function exportProject() {
+    const currentPath = getBasePath();
+    const exportModal = document.getElementById('exportModal');
+    const exportStatusMessage = document.getElementById('exportStatusMessage');
+    
+    // Set exporting flag to true and show modal
+    isProcessRunning = true;
+    exportModal.classList.add('active');
+    exportStatusMessage.textContent = 'Preparing files for export...';
+
+    // Disable all UI elements
+    const disableElements = document.querySelectorAll('.main-container button, .file-item, .quick-link, .filter-item, .sidebar-toggle');
+    disableElements.forEach(el => el.style.pointerEvents = 'none');
+
+    fetch(`/export?path=${encodeURIComponent(currentPath)}`)
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => { throw new Error(text) });
+            }
+            // Start the download
+            const disposition = response.headers.get('content-disposition');
+            const fileNameMatch = disposition && disposition.match(/filename="(.+)"/);
+            const fileName = fileNameMatch ? fileNameMatch[1] : 'project-export.zip';
+            
+            return response.blob().then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            });
+        })
+        .then(() => {
+            showNotification('Project exported successfully!', 'success');
+        })
+        .catch(error => {
+            showNotification('Error exporting project: ' + error.message, 'error');
+        })
+        .finally(() => {
+            // Reset exporting flag and hide modal
+            isProcessRunning = false;
+            exportModal.classList.remove('active');
+            
+            // Re-enable all UI elements
+            const enableElements = document.querySelectorAll('.main-container button, .file-item, .quick-link, .filter-item, .sidebar-toggle');
+            enableElements.forEach(el => el.style.pointerEvents = 'auto');
+        });
+}
+
+// New Import Project functions
+function showImportModal() {
+    if (isProcessRunning) {
+        showNotification('An operation is running. Actions are disabled.', 'error');
+        return;
+    }
+    document.getElementById('importModal').classList.add('active');
+    document.getElementById('importLoadingState').style.display = 'none';
+    document.getElementById('uploadZipButton').style.display = 'block';
+    document.getElementById('zipFileInput').value = '';
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.remove('active');
+}
+
+function importProject() {
+    const zipFileInput = document.getElementById('zipFileInput');
+    const zipFile = zipFileInput.files[0];
+
+    if (!zipFile) {
+        showNotification('Please select a zip file to import', 'error');
+        return;
+    }
+    
+    // Hide upload button and show loading state
+    document.getElementById('uploadZipButton').style.display = 'none';
+    document.getElementById('importLoadingState').style.display = 'flex';
+    document.getElementById('importStatusMessage').textContent = 'Importing project...';
+
+    const currentPath = getBasePath();
+    const formData = new FormData();
+    formData.append('zipFile', zipFile);
+    formData.append('currentPath', currentPath);
+
+    // Set process running flag
+    isProcessRunning = true;
+    const disableElements = document.querySelectorAll('.main-container button, .file-item, .quick-link, .filter-item, .sidebar-toggle');
+    disableElements.forEach(el => el.style.pointerEvents = 'none');
+    
+    fetch('/import', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Project imported successfully! Refreshing...', 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showNotification('Error importing project: ' + data.error, 'error');
+            document.getElementById('importLoadingState').style.display = 'none';
+            document.getElementById('uploadZipButton').style.display = 'block';
+        }
+    })
+    .catch(error => {
+        showNotification('Error: ' + error.message, 'error');
+        document.getElementById('importLoadingState').style.display = 'none';
+        document.getElementById('uploadZipButton').style.display = 'block';
+    })
+    .finally(() => {
+        // Reset process running flag and re-enable UI elements
+        isProcessRunning = false;
+        const enableElements = document.querySelectorAll('.main-container button, .file-item, .quick-link, .filter-item, .sidebar-toggle');
+        enableElements.forEach(el => el.style.pointerEvents = 'auto');
+    });
+}
+
 
 // Notification system
 function showNotification(message, type = 'info') {
@@ -618,7 +762,47 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closeSidebarButton) {
         closeSidebarButton.addEventListener('click', toggleSidebar);
     }
+
+    // New export button event listener
+    const exportButton = document.getElementById('exportButton');
+    if (exportButton) {
+        exportButton.addEventListener('click', exportProject);
+    }
+
+    // Close export modal button
+    const closeExportModalBtn = document.getElementById('closeExportModal');
+    if (closeExportModalBtn) {
+        closeExportModalBtn.addEventListener('click', () => {
+            if (isProcessRunning) {
+                showNotification('An operation is in progress and cannot be cancelled.', 'error');
+            } else {
+                document.getElementById('exportModal').classList.remove('active');
+            }
+        });
+    }
+
+    // New import button event listener
+    const importButton = document.getElementById('importButton');
+    if (importButton) {
+        importButton.addEventListener('click', showImportModal);
+    }
     
+    const uploadZipButton = document.getElementById('uploadZipButton');
+    if (uploadZipButton) {
+        uploadZipButton.addEventListener('click', importProject);
+    }
+
+    const closeImportModalBtn = document.getElementById('closeImportModal');
+    if (closeImportModalBtn) {
+        closeImportModalBtn.addEventListener('click', () => {
+            if (isProcessRunning) {
+                showNotification('An operation is in progress and cannot be cancelled.', 'error');
+            } else {
+                document.getElementById('importModal').classList.remove('active');
+            }
+        });
+    }
+
     // Update file count
     const fileCount = document.querySelectorAll('.file-item').length;
     const fileCountElement = document.getElementById('fileCount');
