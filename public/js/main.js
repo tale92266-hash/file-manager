@@ -18,10 +18,6 @@ function refreshFiles() {
     window.location.reload();
 }
 
-function getUserHome() {
-    return '/home/' + (process.env.USER || 'user');
-}
-
 // Sidebar toggle function
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -285,7 +281,6 @@ function saveFile() {
     });
 }
 
-
 // Notification system
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -357,7 +352,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners for sidebar links
     document.querySelectorAll('.quick-link').forEach(item => {
         item.addEventListener('click', () => {
-            navigateToPath(item.dataset.path);
+            const path = item.dataset.path;
+            if (path) {
+                navigateToPath(path);
+            }
         });
     });
 
@@ -402,6 +400,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeEditorButton = document.getElementById('closeEditorButton');
     if (closeEditorButton) {
         closeEditorButton.addEventListener('click', closeFileEditor);
+    }
+
+    const createFileButton = document.getElementById('createFileButton');
+    if (createFileButton) {
+        createFileButton.addEventListener('click', () => createItem('file'));
+    }
+
+    const createFolderButton = document.getElementById('createFolderButton');
+    if (createFolderButton) {
+        createFolderButton.addEventListener('click', () => createItem('folder'));
+    }
+
+    const uploadFilesButton = document.getElementById('uploadFilesButton');
+    if (uploadFilesButton) {
+        uploadFilesButton.addEventListener('click', uploadFiles);
     }
     
     // Update file count
