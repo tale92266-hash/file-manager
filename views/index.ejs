@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Terminal File Manager</title>
 
-    <!-- CDN Icon Libraries -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet"/>
 
@@ -13,12 +12,10 @@
     <link rel="stylesheet" href="/css/mobile.css" />
 </head>
 <body>
-    <!-- Hamburger Sidebar Toggle Button -->
     <button class="sidebar-toggle" onclick="toggleSidebar()">
         <i class="bi bi-list"></i>
     </button>
 
-    <!-- Sidebar starts -->
     <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation">
         <div class="sidebar-section">
             <h3>Quick Access</h3>
@@ -34,10 +31,10 @@
             <h3>File Types</h3>
             <nav>
                 <ul>
-                    <li><a href="#" onclick="filterFiles('all')"><i class="bi bi-file-earmark"></i> All Files</a></li>
-                    <li><a href="#" onclick="filterFiles('code')"><i class="bi bi-laptop-code"></i> Code Files</a></li>
-                    <li><a href="#" onclick="filterFiles('images')"><i class="bi bi-image"></i> Images</a></li>
-                    <li><a href="#" onclick="filterFiles('hidden')"><i class="bi bi-eye-slash"></i> Hidden</a></li>
+                    <li><a href="#" id="filterAll"><i class="bi bi-file-earmark"></i> All Files</a></li>
+                    <li><a href="#" id="filterCode"><i class="bi bi-laptop-code"></i> Code Files</a></li>
+                    <li><a href="#" id="filterImages"><i class="bi bi-image"></i> Images</a></li>
+                    <li><a href="#" id="hideToggle"><i class="bi bi-eye-slash"></i> Hidden</a></li>
                 </ul>
             </nav>
         </div>
@@ -53,9 +50,6 @@
             </div>
         </div>
     </aside>
-    <!-- Sidebar ends -->
-
-    <!-- Header -->
     <header class="app-header">
         <h1>
             <i class="bi bi-terminal"></i>
@@ -71,9 +65,7 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
-        <!-- Breadcrumb Navigation -->
         <nav aria-label="breadcrumb" class="breadcrumb">
             <a href="#" onclick="navigateToPath('/')"><i class="bi bi-house"></i></a>
             <% pathSegments.forEach(function(segment, idx) { %>
@@ -82,7 +74,6 @@
             <% }); %>
         </nav>
 
-        <!-- File List -->
         <div class="file-grid" id="fileGrid" role="list" aria-label="List of files and folders">
             <% if(currentPath !== '/') { %>
                 <div class="file-item directory" role="listitem" onclick="navigateToPath('<%= parentPath %>')">
@@ -99,7 +90,8 @@
                 <div class="file-item <%= file.isDirectory ? 'directory' : 'file' %> <%= file.isHidden ? 'hidden-file' : '' %>" 
                      role="listitem" 
                      data-path="<%= file.fullPath %>" 
-                     onclick="<%= file.isDirectory ? 'navigateToPath(\\'' + file.fullPath + '\\')' : 'openFileEditor(\\'' + file.fullPath + '\\', \\' + file.name + '\\')' %>">
+                     onclick="<%= file.isDirectory ?
+'navigateToPath(\'' + file.fullPath + '\')' : 'openFileEditor(\'' + file.fullPath + '\', \'' + file.name + '\')' %>">
                     <i class="<%= file.isDirectory ? 'bi bi-folder' : 'bi bi-file-earmark' %>"></i>
                     <span class="file-name"><%= file.name %></span>
                     <div class="file-meta">
@@ -113,27 +105,10 @@
         </div>
     </main>
 
-    <!-- Include footer partial -->
     <%- include('partials/footer') %>
 
-    <!-- Script files -->
     <script src="/js/main.js"></script>
     <script src="/js/editor.js"></script>
-
-    <script>
-        function navigateToPath(path) {
-            window.location.href = `/?path=${encodeURIComponent(path)}`;
-        }
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
-        }
-        document.querySelectorAll('.sidebar a').forEach(item => {
-            item.onclick = () => {
-                document.getElementById('sidebar').classList.remove('active');
-            };
-        });
-    </script>
 
 </body>
 </html>
