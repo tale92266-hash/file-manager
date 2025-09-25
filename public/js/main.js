@@ -269,117 +269,120 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Event listeners for file items
-document.querySelectorAll('.file-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const path = item.dataset.path;
-        const type = item.dataset.type;
-        if (type === 'folder') {
-            navigateToPath(path);
-        } else {
-            // Firing a custom event instead of calling a function directly
-            const openEditorEvent = new CustomEvent('open-editor', {
-                detail: {
-                    filePath: path,
-                    fileName: item.querySelector('.file-name').textContent
-                }
-            });
-            document.dispatchEvent(openEditorEvent);
-        }
+// Initialize app with DOMContentLoaded to ensure all elements are loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Event listeners for file items
+    document.querySelectorAll('.file-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const path = item.dataset.path;
+            const type = item.dataset.type;
+            if (type === 'folder') {
+                navigateToPath(path);
+            } else {
+                // Firing a custom event instead of calling a function directly
+                const openEditorEvent = new CustomEvent('open-editor', {
+                    detail: {
+                        filePath: path,
+                        fileName: item.querySelector('.file-name').textContent
+                    }
+                });
+                document.dispatchEvent(openEditorEvent);
+            }
+        });
     });
-});
 
-// Event listeners for breadcrumb links
-document.querySelectorAll('.breadcrumb-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigateToPath(item.dataset.path);
+    // Event listeners for breadcrumb links
+    document.querySelectorAll('.breadcrumb-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateToPath(item.dataset.path);
+        });
     });
-});
 
-// Event listeners for sidebar links
-document.querySelectorAll('.quick-link').forEach(item => {
-    item.addEventListener('click', () => {
-        const path = item.dataset.path;
-        if (path) {
-            navigateToPath(path);
-        }
+    // Event listeners for sidebar links
+    document.querySelectorAll('.quick-link').forEach(item => {
+        item.addEventListener('click', () => {
+            const path = item.dataset.path;
+            if (path) {
+                navigateToPath(path);
+            }
+        });
     });
-});
 
-document.querySelectorAll('.filter-item').forEach(item => {
-    item.addEventListener('click', () => {
-        filterFiles(item.dataset.filter);
+    document.querySelectorAll('.filter-item').forEach(item => {
+        item.addEventListener('click', () => {
+            filterFiles(item.dataset.filter);
+        });
     });
-});
-
-// Header button event listeners
-const sidebarToggleBtn = document.getElementById('sidebarToggle');
-if (sidebarToggleBtn) {
-    sidebarToggleBtn.addEventListener('click', toggleSidebar);
-}
-
-const newButton = document.getElementById('newButton');
-if (newButton) {
-    newButton.addEventListener('click', showCreateModal);
-}
-
-const uploadButton = document.getElementById('uploadButton');
-if (uploadButton) {
-    uploadButton.addEventListener('click', showUploadModal);
-}
-
-// Modal button event listeners
-const closeCreateModalBtn = document.getElementById('closeCreateModal');
-if (closeCreateModalBtn) {
-    closeCreateModalBtn.addEventListener('click', closeCreateModal);
-}
-
-const closeUploadModalBtn = document.getElementById('closeUploadModal');
-if (closeUploadModalBtn) {
-    closeUploadModalBtn.addEventListener('click', closeUploadModal);
-}
-
-const createFileButton = document.getElementById('createFileButton');
-if (createFileButton) {
-    createFileButton.addEventListener('click', () => createItem('file'));
-}
-
-const createFolderButton = document.getElementById('createFolderButton');
-if (createFolderButton) {
-    createFolderButton.addEventListener('click', () => createItem('folder'));
-}
-
-const uploadFilesButton = document.getElementById('uploadFilesButton');
-if (uploadFilesButton) {
-    uploadFilesButton.addEventListener('click', uploadFiles);
-}
-
-// Sidebar outside click to close
-document.addEventListener('click', function(event) {
-    const sidebar = document.getElementById('sidebar');
-    const sidebarToggleBtn = document.getElementById('sidebarToggle');
     
-    if (!sidebar.contains(event.target) && !sidebarToggleBtn.contains(event.target) && sidebar.classList.contains('active')) {
-        sidebar.classList.remove('active');
+    // Header button event listeners
+    const sidebarToggleBtn = document.getElementById('sidebarToggle');
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', toggleSidebar);
+    }
+    
+    const newButton = document.getElementById('newButton');
+    if (newButton) {
+        newButton.addEventListener('click', showCreateModal);
+    }
+    
+    const uploadButton = document.getElementById('uploadButton');
+    if (uploadButton) {
+        uploadButton.addEventListener('click', showUploadModal);
+    }
+    
+    // Modal button event listeners
+    const closeCreateModalBtn = document.getElementById('closeCreateModal');
+    if (closeCreateModalBtn) {
+        closeCreateModalBtn.addEventListener('click', closeCreateModal);
+    }
+    
+    const closeUploadModalBtn = document.getElementById('closeUploadModal');
+    if (closeUploadModalBtn) {
+        closeUploadModalBtn.addEventListener('click', closeUploadModal);
+    }
+
+    const createFileButton = document.getElementById('createFileButton');
+    if (createFileButton) {
+        createFileButton.addEventListener('click', () => createItem('file'));
+    }
+
+    const createFolderButton = document.getElementById('createFolderButton');
+    if (createFolderButton) {
+        createFolderButton.addEventListener('click', () => createItem('folder'));
+    }
+
+    const uploadFilesButton = document.getElementById('uploadFilesButton');
+    if (uploadFilesButton) {
+        uploadFilesButton.addEventListener('click', uploadFiles);
+    }
+
+    // Sidebar outside click to close
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggleBtn = document.getElementById('sidebarToggle');
+        
+        if (!sidebar.contains(event.target) && !sidebarToggleBtn.contains(event.target) && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+        }
+    });
+
+    // Sidebar close button event listener
+    const closeSidebarButton = document.getElementById('closeSidebarButton');
+    if (closeSidebarButton) {
+        closeSidebarButton.addEventListener('click', toggleSidebar);
+    }
+    
+    // Update file count
+    const fileCount = document.querySelectorAll('.file-item').length;
+    const fileCountElement = document.getElementById('fileCount');
+    if (fileCountElement) {
+        fileCountElement.textContent = fileCount;
+    }
+    
+    // Update current path display
+    const currentPathDisplay = document.getElementById('currentPathDisplay');
+    if (currentPathDisplay) {
+        currentPathDisplay.textContent = getBasePath();
     }
 });
-
-// Sidebar close button event listener
-const closeSidebarButton = document.getElementById('closeSidebarButton');
-if (closeSidebarButton) {
-    closeSidebarButton.addEventListener('click', toggleSidebar);
-}
-
-// Update file count
-const fileCount = document.querySelectorAll('.file-item').length;
-const fileCountElement = document.getElementById('fileCount');
-if (fileCountElement) {
-    fileCountElement.textContent = fileCount;
-}
-
-// Update current path display
-const currentPathDisplay = document.getElementById('currentPathDisplay');
-if (currentPathDisplay) {
-    currentPathDisplay.textContent = getBasePath();
-}
