@@ -392,7 +392,12 @@ function showNotification(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', function() {
     // Event listeners for file items
     document.querySelectorAll('.file-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (event) => {
+            // Stop propagation for options button
+            if (event.target.closest('.file-actions')) {
+                return;
+            }
+
             const path = item.dataset.path;
             const type = item.dataset.type;
             if (type === 'folder') {
@@ -400,6 +405,17 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 openFileEditor(path, item.querySelector('.file-name').textContent);
             }
+        });
+    });
+
+    // Event listeners for file action buttons (3 dots)
+    document.querySelectorAll('.file-actions button').forEach(button => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation(); // Stop event from bubbling to parent file-item
+            const item = event.target.closest('.file-item');
+            const path = item.dataset.path;
+            const name = item.querySelector('.file-name').textContent;
+            showContextMenu(event, path, name);
         });
     });
 
