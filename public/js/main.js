@@ -2,6 +2,7 @@ let currentPath = '/';
 let hideHidden = true;
 let selectedFilePath = '';
 let selectedFileName = '';
+let originalContent = ''; // Variable to store original file content
 
 // Helper function to get the base path from the URL
 function getBasePath() {
@@ -229,6 +230,7 @@ function openFileEditor(filePath, fileName) {
     const editorModal = document.getElementById('editorModal');
     const editorTitle = document.getElementById('editorTitle');
     const codeEditor = document.getElementById('codeEditor');
+    const saveButton = document.getElementById('saveFileButton');
 
     selectedFilePath = filePath;
     editorTitle.textContent = fileName;
@@ -240,14 +242,18 @@ function openFileEditor(filePath, fileName) {
         .then(data => {
             if (data.content) {
                 codeEditor.value = data.content;
+                originalContent = data.content; // Original content ko save karein
+                saveButton.disabled = true; // Initially button ko disable karein
             } else {
                 codeEditor.value = 'Error loading file content.';
                 showNotification('Error loading file: ' + data.error, 'error');
+                saveButton.disabled = true;
             }
         })
         .catch(error => {
             codeEditor.value = 'Error loading file content.';
             showNotification('Network error: ' + error.message, 'error');
+            saveButton.disabled = true;
         });
 }
 
@@ -272,7 +278,8 @@ function saveFile() {
     .then(data => {
         if (data.success) {
             showNotification('File saved successfully!', 'success');
-            closeFileEditor(); // Ab editor close ho jayega
+            originalContent = content; // New content ko original maan lein
+            document.getElementById('saveFileButton').disabled = true; // Button ko disable karein
         } else {
             showNotification('Error saving file: ' + data.error, 'error');
         }
@@ -286,6 +293,8 @@ function saveFile() {
 function clearEditor() {
     const codeEditor = document.getElementById('codeEditor');
     codeEditor.value = '';
+    const saveButton = document.getElementById('saveFileButton');
+    saveButton.disabled = codeEditor.value === originalContent;
 }
 
 function pasteContent() {
@@ -293,6 +302,8 @@ function pasteContent() {
         const codeEditor = document.getElementById('codeEditor');
         codeEditor.value += text;
         showNotification('Pasted content from clipboard!', 'info');
+        const saveButton = document.getElementById('saveFileButton');
+        saveButton.disabled = codeEditor.value === originalContent;
     }).catch(err => {
         showNotification('Failed to read clipboard content.', 'error');
     });
@@ -482,5 +493,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentPathDisplay = document.getElementById('currentPathDisplay');
     if (currentPathDisplay) {
         currentPathDisplay.textContent = getBasePath();
+    }
+    
+    // Check for changes in the editor to enable/disable save button
+    const codeEditor = document.getElementById('codeEditor');
+    if (codeEditor) {
+        codeEditor.addEventListener('input', () => {
+            const saveButton = document.getElementById('saveFileButton');
+            if (codeEditor.value !== originalContent) {
+                saveButton.disabled = false;
+            } else {
+                saveButton.disabled = true;
+            }
+        });
     }
 });
