@@ -64,7 +64,16 @@ function showContextMenu(event, filePath, fileName) {
     
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
-        contextMenu.style.left = event.pageX + 'px';
+        // Check if menu would go off-screen
+        const windowWidth = window.innerWidth;
+        const menuWidth = contextMenu.offsetWidth;
+        let leftPosition = event.pageX;
+
+        if (leftPosition + menuWidth > windowWidth) {
+            leftPosition = windowWidth - menuWidth - 20; // 20px padding from the right edge
+        }
+        
+        contextMenu.style.left = leftPosition + 'px';
         contextMenu.style.top = event.pageY + 'px';
         contextMenu.classList.add('active');
     }
@@ -82,52 +91,71 @@ function hideContextMenu() {
 
 function renameFile() {
     hideContextMenu();
-    const newName = prompt('Enter new name:', selectedFileName);
-    if (newName && newName !== selectedFileName) {
-        fetch('/rename', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                oldPath: selectedFilePath,
-                newName: newName
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification('File renamed successfully!', 'success');
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                showNotification('Error renaming file: ' + data.error, 'error');
-            }
-        })
-        .catch(error => {
-            showNotification('Error: ' + error.message, 'error');
-        });
+    const renameModal = document.getElementById('renameModal');
+    const renameNewNameInput = document.getElementById('renameNewName');
+    
+    renameNewNameInput.value = selectedFileName;
+    renameModal.classList.add('active');
+}
+
+function saveRenamedFile() {
+    const newName = document.getElementById('renameNewName').value.trim();
+    if (!newName || newName === selectedFileName) {
+        showNotification('Please enter a new name', 'error');
+        return;
     }
+    
+    fetch('/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            oldPath: selectedFilePath,
+            newName: newName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('File renamed successfully!', 'success');
+            document.getElementById('renameModal').classList.remove('active');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification('Error renaming file: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error: ' + error.message, 'error');
+    });
 }
 
 function deleteFile() {
     hideContextMenu();
-    if (confirm(`Are you sure you want to delete "${selectedFileName}"?`)) {
-        fetch('/delete', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: selectedFilePath })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification('File deleted successfully!', 'success');
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                showNotification('Error deleting file: ' + data.error, 'error');
-            }
-        })
-        .catch(error => {
-            showNotification('Error: ' + error.message, 'error');
-        });
-    }
+    const deleteModal = document.getElementById('deleteModal');
+    const deleteItemName = document.getElementById('deleteItemName');
+    
+    deleteItemName.textContent = selectedFileName;
+    deleteModal.classList.add('active');
+}
+
+function confirmDelete() {
+    fetch('/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: selectedFilePath })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('File deleted successfully!', 'success');
+            document.getElementById('deleteModal').classList.remove('active');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification('Error deleting file: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error: ' + error.message, 'error');
+    });
 }
 
 function copyPath() {
@@ -456,6 +484,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('renameMenuItem').addEventListener('click', renameFile);
     document.getElementById('deleteMenuItem').addEventListener('click', deleteFile);
     document.getElementById('copyPathMenuItem').addEventListener('click', copyPath);
+
+    // Event listeners for rename modal buttons
+    document.getElementById('closeRenameModal').addEventListener('click', () => document.getElementById('renameModal').classList.remove('active'));
+    document.getElementById('cancelRenameButton').addEventListener('click', () => document.getElementById('renameModal').classList.remove('active'));
+    document.getElementById('saveRenameButton').addEventListener('click', saveRenamedFile);
+
+    // Event listeners for delete modal buttons
+    document.getElementById('closeDeleteModal').addEventListener('click', () => document.getElementById('deleteModal').classList.remove('active'));
+    document.getElementById('cancelDeleteButton').addEventListener('click', () => document.getElementById('deleteModal').classList.remove('active'));
+    document.getElementById('confirmDeleteButton').addEventListener('click', confirmDelete);
 
     // Event listeners for breadcrumb links
     document.querySelectorAll('.breadcrumb-item').forEach(item => {
