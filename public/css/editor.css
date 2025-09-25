@@ -48,7 +48,33 @@
     color: white;
 }
 
-.footer-actions {
+.editor-footer .btn {
+    padding: 0.75rem;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    min-width: 48px;
+    min-height: 48px;
     display: flex;
-    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.editor-footer .btn-danger {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.editor-footer .btn-info {
+    background: #3498db;
+    color: #fff;
+}
+
+.editor-footer .btn-primary {
+    background: #4a90e2;
+    color: #fff;
+}
+
+.editor-footer .btn-secondary {
+    background: #e0e0e0;
+    color: #333;
 }
