@@ -47,6 +47,9 @@ app.get('/', async (req, res) => {
     const currentPath = req.query.path || process.cwd();
     const files = await fs.readdir(currentPath, { withFileTypes: true });
     
+    // Get user's home directory path
+    const userHomePath = path.join(require('os').homedir());
+    
     const fileList = await Promise.all(
       files.map(async (file) => {
         const filePath = path.join(currentPath, file.name);
@@ -75,7 +78,8 @@ app.get('/', async (req, res) => {
       files: fileList,
       currentPath: currentPath,
       parentPath: path.dirname(currentPath),
-      pathSegments: currentPath.split(path.sep).filter(Boolean)
+      pathSegments: currentPath.split(path.sep).filter(Boolean),
+      userHomePath: userHomePath
     });
   } catch (error) {
     res.status(500).send(`Error: ${error.message}`);
