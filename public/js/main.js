@@ -484,14 +484,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Adjust modal content height on keyboard show/hide (mobile)
-window.addEventListener('resize', () => {
-    const textarea = document.getElementById('codeEditor');
-    if (!textarea) return;
+// Fix for iOS keyboard covering fixed elements
+if ('visualViewport' in window) {
+    window.visualViewport.onresize = function() {
+        const editorModal = document.getElementById('editorModal');
+        const codeEditor = document.getElementById('codeEditor');
 
-    // On keyboard open, window.innerHeight shrinks, adjust editor height accordingly
-    const headerHeight = 60;
-    const footerHeight = 60;
-    const newHeight = window.innerHeight - headerHeight - footerHeight;
-    textarea.style.height = `${newHeight}px`;
-});
+        if (editorModal && editorModal.classList.contains('active')) {
+            const headerHeight = document.querySelector('.editor-header').offsetHeight;
+            const footerHeight = document.querySelector('.editor-footer').offsetHeight;
+            const newHeight = window.visualViewport.height - (headerHeight + footerHeight);
+            codeEditor.style.height = `${newHeight}px`;
+        }
+    };
+}
