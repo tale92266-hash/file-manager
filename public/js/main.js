@@ -224,6 +224,85 @@ function uploadFiles() {
     });
 }
 
+// Editor modal functions
+function openFileEditor(filePath, fileName) {
+    const editorModal = document.getElementById('editorModal');
+    const editorTitle = document.getElementById('editorTitle');
+    const codeEditor = document.getElementById('codeEditor');
+
+    selectedFilePath = filePath;
+    editorTitle.textContent = fileName;
+    editorModal.classList.add('active');
+
+    // Fetch file content and populate editor
+    fetch(`/file-content?path=${encodeURIComponent(filePath)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.content) {
+                codeEditor.value = data.content;
+            } else {
+                codeEditor.value = 'Error loading file content.';
+                showNotification('Error loading file: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            codeEditor.value = 'Error loading file content.';
+            showNotification('Network error: ' + error.message, 'error');
+        });
+}
+
+function closeFileEditor() {
+    const editorModal = document.getElementById('editorModal');
+    editorModal.classList.remove('active');
+}
+
+function saveFile() {
+    const codeEditor = document.getElementById('codeEditor');
+    const content = codeEditor.value;
+
+    fetch('/save-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            filePath: selectedFilePath,
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('File saved successfully!', 'success');
+        } else {
+            showNotification('Error saving file: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error: ' + error.message, 'error');
+    });
+}
+
+// Editor specific functions
+function clearEditor() {
+    const codeEditor = document.getElementById('codeEditor');
+    codeEditor.value = '';
+}
+
+function pasteContent() {
+    navigator.clipboard.readText().then(text => {
+        const codeEditor = document.getElementById('codeEditor');
+        codeEditor.value += text;
+        showNotification('Pasted content from clipboard!', 'info');
+    }).catch(err => {
+        showNotification('Failed to read clipboard content.', 'error');
+    });
+}
+
+function cancelEdit() {
+    // Re-load the content from the file to revert changes
+    openFileEditor(selectedFilePath, document.getElementById('editorTitle').textContent);
+    showNotification('Changes cancelled!', 'info');
+}
+
 // Notification system
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -269,7 +348,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Initialize app with DOMContentLoaded to ensure all elements are loaded
+// Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     // Event listeners for file items
     document.querySelectorAll('.file-item').forEach(item => {
@@ -279,14 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (type === 'folder') {
                 navigateToPath(path);
             } else {
-                // Firing a custom event instead of calling a function directly
-                const openEditorEvent = new CustomEvent('open-editor', {
-                    detail: {
-                        filePath: path,
-                        fileName: item.querySelector('.file-name').textContent
-                    }
-                });
-                document.dispatchEvent(openEditorEvent);
+                openFileEditor(path, item.querySelector('.file-name').textContent);
             }
         });
     });
@@ -340,6 +412,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeUploadModalBtn = document.getElementById('closeUploadModal');
     if (closeUploadModalBtn) {
         closeUploadModalBtn.addEventListener('click', closeUploadModal);
+    }
+
+    const saveFileButton = document.getElementById('saveFileButton');
+    if (saveFileButton) {
+        saveFileButton.addEventListener('click', saveFile);
+    }
+
+    const closeEditorButton = document.getElementById('closeEditorButton');
+    if (closeEditorButton) {
+        closeEditorButton.addEventListener('click', closeFileEditor);
+    }
+
+    const clearAllButton = document.getElementById('clearAllButton');
+    if (clearAllButton) {
+        clearAllButton.addEventListener('click', clearEditor);
+    }
+
+    const pasteButton = document.getElementById('pasteButton');
+    if (pasteButton) {
+        pasteButton.addEventListener('click', pasteContent);
+    }
+
+    const cancelButton = document.getElementById('cancelButton');
+    if (cancelButton) {
+        cancelButton.addEventListener('click', closeFileEditor);
     }
 
     const createFileButton = document.getElementById('createFileButton');
