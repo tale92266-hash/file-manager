@@ -170,7 +170,15 @@ function createItem(type) {
         if (data.success) {
             showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} created successfully!`, 'success');
             closeCreateModal();
-            setTimeout(() => window.location.reload(), 1000);
+            
+            if (type === 'file') {
+                // Editor open karein naye file ke liye
+                openFileEditor(`${currentPath}/${name}`, name);
+            } else {
+                // Folders ke liye page reload karein
+                setTimeout(() => window.location.reload(), 1000);
+            }
+
         } else {
             showNotification('Error creating item: ' + data.error, 'error');
         }
@@ -280,6 +288,7 @@ function saveFile() {
             showNotification('File saved successfully!', 'success');
             originalContent = content; // New content ko original maan lein
             document.getElementById('saveFileButton').disabled = true; // Button ko disable karein
+            closeFileEditor();
         } else {
             showNotification('Error saving file: ' + data.error, 'error');
         }
