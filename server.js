@@ -56,7 +56,7 @@ app.get('/', async (req, res) => {
           name: file.name,
           isDirectory: file.isDirectory(),
           size: file.isDirectory() ? '-' : formatFileSize(stats.size),
-          modified: stats.mtime.toLocaleDateString(),
+          // removed 'modified' attribute
           icon: getFileIcon(file.name, file.isDirectory()),
           isHidden: file.name.startsWith('.'),
           fullPath: filePath
