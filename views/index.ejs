@@ -110,19 +110,19 @@
 
                 <div class="file-grid" id="fileGrid" role="list" aria-label="List of files and folders">
                     <% if(currentPath !== '/') { %>
-                        <div class="file-item directory" role="listitem" data-path="<%= parentPath %>" data-type="folder">
-                            <i class="bi bi-folder"></i>
+                        <div class="file-item parent-dir-item" role="listitem" data-path="<%= parentPath %>" data-type="folder">
+                            <i class="bi bi-box-arrow-left"></i>
                             <span class="file-name">..</span>
                             <div class="file-meta">Parent Directory</div>
                         </div>
                     <% } %>
 
                     <% files.forEach(function(file) { %>
-                        <div class="file-item <%= file.isDirectory ? 'directory' : 'file' %> <%= file.isHidden ? 'hidden-file' : '' %>"
+                        <div class="file-item <%= file.isDirectory ? 'directory-item' : 'file-item' %>"
                              role="listitem"
                              data-path="<%= file.fullPath %>"
                              data-type="<%= file.isDirectory ? 'folder' : 'file' %>">
-                            <i class="<%= file.isDirectory ? 'bi bi-folder' : 'bi bi-file-earmark' %>"></i>
+                            <i class="<%= file.iconClass %>"></i>
                             <div class="file-info">
                                 <span class="file-name"><%= file.name %></span>
                                 <div class="file-meta">
