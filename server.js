@@ -3,8 +3,6 @@ const fs = require('fs-extra');
 const path = require('path');
 const multer = require('multer');
 const mime = require('mime-types');
-const archiver = require('archiver');
-const parseGitignore = require('parse-gitignore-ts').default;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,7 +29,7 @@ app.set('views', './views');
 
 // Helper function to get file icon based on file type
 function getFileIcon(fileName, isDirectory) {
-  if (isDirectory) return 'bi bi-folder-fill';
+  if (isDirectory) return 'bi bi-folder-fill'; // Folder icon
   
   const ext = path.extname(fileName).toLowerCase();
   switch (ext) {
@@ -119,70 +117,6 @@ app.get('/', async (req, res) => {
   } catch (error) {
     res.status(500).send(`Error: ${error.message}`);
   }
-});
-
-// New route to handle project export
-app.get('/export-project', async (req, res) => {
-    const currentPath = req.query.path || process.cwd();
-    const archive = archiver('zip', {
-        zlib: { level: 9 }
-    });
-
-    // Set response headers for download
-    res.attachment('project-export.zip');
-    archive.pipe(res);
-
-    archive.on('error', (err) => {
-        console.error('Archiver Error:', err);
-        // Check if headers have already been sent before sending a new response
-        if (!res.headersSent) {
-             res.status(500).send({ error: err.message });
-        }
-    });
-
-    try {
-        let ignoreList = [];
-        const gitignorePath = path.join(currentPath, '.gitignore');
-        if (await fs.pathExists(gitignorePath)) {
-            const ignoreFileContent = await fs.readFile(gitignorePath, 'utf8');
-            ignoreList = parseGitignore(ignoreFileContent);
-        }
-
-        const addFilesToArchive = async (dirPath, rootPath) => {
-            const files = await fs.readdir(dirPath, { withFileTypes: true });
-
-            for (const file of files) {
-                const filePath = path.join(dirPath, file.name);
-                const relativePath = path.relative(rootPath, filePath);
-
-                // Use the ignore list to check for ignored files/folders
-                const isIgnored = ignoreList.some(pattern => {
-                    const regex = new RegExp(pattern.replace(/\./g, '\\.').replace(/\*/g, '.*'));
-                    return regex.test(relativePath);
-                });
-
-                if (isIgnored) {
-                    continue;
-                }
-
-                if (file.isDirectory()) {
-                    await addFilesToArchive(filePath, rootPath);
-                } else {
-                    archive.file(filePath, { name: relativePath });
-                }
-            }
-        };
-
-        await addFilesToArchive(currentPath, currentPath);
-        
-        archive.finalize();
-
-    } catch (error) {
-        console.error('Export Error:', error);
-        if (!res.headersSent) {
-             res.status(500).send({ error: error.message });
-        }
-    }
 });
 
 // File content route
