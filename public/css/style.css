@@ -124,7 +124,13 @@ body {
     user-select: none;
 }
 
-.app-header h1 {
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.app-title {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -132,23 +138,62 @@ body {
     font-weight: 700;
 }
 
-.header-actions button {
-    background: rgba(255 255 255 / 0.3);
-    border: none;
-    padding: 0.4rem;
-    margin-left: 0.75rem;
-    border-radius: 6px;
-    font-weight: 600;
-    color: white;
-    cursor: pointer;
+.header-right {
     display: flex;
     align-items: center;
-    gap: 6px;
-    transition: background 0.3s;
+    gap: 1rem;
 }
-.header-actions button:hover {
-    background: rgba(255 255 255 / 0.5);
+
+.header-right .btn-primary,
+.header-right .btn-secondary {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
+
+/* Button styles for actions (New, Upload) */
+.btn-primary, .btn-secondary, .btn-danger, .btn-info {
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    background: #4a90e2;
+    color: #fff;
+}
+
+.btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.btn-info {
+    background: #3498db;
+    color: #fff;
+}
+
+.btn-primary:hover, .btn-secondary:hover, .btn-danger:hover, .btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
 
 /* Main content layout */
 .main-content {
@@ -326,16 +371,53 @@ body {
 
 .modal-content.small {
     max-width: 400px;
+    padding: 1.5rem;
+    text-align: center;
 }
 
-.modal-content.full-screen {
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 0;
+.modal-header {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.modal-body {
+    padding: 1rem 0;
+}
+
+.input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-close:hover {
+    color: #333;
 }
 
 /* Editor */
@@ -357,7 +439,7 @@ body {
 
 .code-editor-area {
     width: 100%;
-    flex-grow: 1;
+    height: calc(100vh - 120px);
     border: none;
     outline: none;
     padding: 1rem;
