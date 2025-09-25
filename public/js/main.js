@@ -337,6 +337,39 @@ function pasteContent() {
     });
 }
 
+// New functions for Cut, Copy, Select All
+function selectAll() {
+    const codeEditor = document.getElementById('codeEditor');
+    codeEditor.select();
+    showNotification('All content selected!', 'info');
+}
+
+function cutContent() {
+    const codeEditor = document.getElementById('codeEditor');
+    navigator.clipboard.writeText(codeEditor.value)
+    .then(() => {
+        codeEditor.value = '';
+        showNotification('Content cut to clipboard!', 'info');
+        const saveButton = document.getElementById('saveFileButton');
+        saveButton.disabled = codeEditor.value === originalContent;
+    })
+    .catch(err => {
+        showNotification('Failed to cut content.', 'error');
+    });
+}
+
+function copyContent() {
+    const codeEditor = document.getElementById('codeEditor');
+    navigator.clipboard.writeText(codeEditor.value)
+    .then(() => {
+        showNotification('Content copied to clipboard!', 'success');
+    })
+    .catch(err => {
+        showNotification('Failed to copy content.', 'error');
+    });
+}
+
+
 function cancelEdit() {
     // Re-load the content from the file to revert changes
     openFileEditor(selectedFilePath, document.getElementById('editorTitle').textContent);
@@ -494,6 +527,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (pasteButton) {
         pasteButton.addEventListener('click', pasteContent);
     }
+
+    // Event listeners for newly added buttons
+    const selectAllButton = document.getElementById('selectAllButton');
+    if (selectAllButton) {
+        selectAllButton.addEventListener('click', selectAll);
+    }
+
+    const copyButton = document.getElementById('copyButton');
+    if (copyButton) {
+        copyButton.addEventListener('click', copyContent);
+    }
+
+    const cutButton = document.getElementById('cutButton');
+    if (cutButton) {
+        cutButton.addEventListener('click', cutContent);
+    }
+
 
     const cancelButton = document.getElementById('cancelButton');
     if (cancelButton) {
