@@ -14,6 +14,12 @@
 <body>
     <div class="app-container">
         <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Menu</h3>
+                <button id="closeSidebarButton" class="btn-icon">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
             <div class="sidebar-content">
                 <div class="sidebar-section">
                     <h3 class="section-title">Quick Access</h3>
@@ -72,23 +78,21 @@
         </aside>
         <div class="main-container">
             <header class="app-header">
-                <div class="header-content">
-                    <div class="header-left">
-                        <button class="sidebar-toggle" id="sidebarToggle">
-                            <i class="bi bi-list"></i>
-                        </button>
-                        <h1 class="app-title">
-                            <i class="bi bi-terminal"></i>
-                        </h1>
-                    </div>
-                    <div class="header-right">
-                        <button class="btn-primary" id="newButton" aria-label="New">
-                            <i class="bi bi-plus-lg"></i>
-                        </button>
-                        <button class="btn-secondary" id="uploadButton" aria-label="Upload">
-                            <i class="bi bi-upload"></i>
-                        </button>
-                    </div>
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="app-title">
+                        <i class="bi bi-terminal"></i>
+                    </h1>
+                </div>
+                <div class="header-right">
+                    <button class="btn-primary" id="newButton" aria-label="New">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    <button class="btn-secondary" id="uploadButton" aria-label="Upload">
+                        <i class="bi bi-upload"></i>
+                    </button>
                 </div>
             </header>
 
