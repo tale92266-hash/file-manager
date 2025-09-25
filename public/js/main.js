@@ -483,3 +483,15 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPathDisplay.textContent = getBasePath();
     }
 });
+
+// Adjust modal content height on keyboard show/hide (mobile)
+window.addEventListener('resize', () => {
+    const textarea = document.getElementById('codeEditor');
+    if (!textarea) return;
+
+    // On keyboard open, window.innerHeight shrinks, adjust editor height accordingly
+    const headerHeight = 60;
+    const footerHeight = 60;
+    const newHeight = window.innerHeight - headerHeight - footerHeight;
+    textarea.style.height = `${newHeight}px`;
+});
