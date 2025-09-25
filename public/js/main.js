@@ -281,6 +281,28 @@ function saveFile() {
     });
 }
 
+// Editor specific functions
+function clearEditor() {
+    const codeEditor = document.getElementById('codeEditor');
+    codeEditor.value = '';
+}
+
+function pasteContent() {
+    navigator.clipboard.readText().then(text => {
+        const codeEditor = document.getElementById('codeEditor');
+        codeEditor.value += text;
+        showNotification('Pasted content from clipboard!', 'info');
+    }).catch(err => {
+        showNotification('Failed to read clipboard content.', 'error');
+    });
+}
+
+function cancelEdit() {
+    // Re-load the content from the file to revert changes
+    openFileEditor(selectedFilePath, document.getElementById('editorTitle').textContent);
+    showNotification('Changes cancelled!', 'info');
+}
+
 // Notification system
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -400,6 +422,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeEditorButton = document.getElementById('closeEditorButton');
     if (closeEditorButton) {
         closeEditorButton.addEventListener('click', closeFileEditor);
+    }
+
+    const clearAllButton = document.getElementById('clearAllButton');
+    if (clearAllButton) {
+        clearAllButton.addEventListener('click', clearEditor);
+    }
+
+    const pasteButton = document.getElementById('pasteButton');
+    if (pasteButton) {
+        pasteButton.addEventListener('click', pasteContent);
+    }
+
+    const cancelButton = document.getElementById('cancelButton');
+    if (cancelButton) {
+        cancelButton.addEventListener('click', closeFileEditor);
     }
 
     const createFileButton = document.getElementById('createFileButton');
