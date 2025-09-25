@@ -130,8 +130,43 @@
                 </div>
             </main>
 
-            <div id="createModal" class="modal">...</div>
-            <div id="uploadModal" class="modal">...</div>
+            <div id="createModal" class="modal">
+                <div class="modal-content small">
+                    <div class="modal-header">
+                        <h3>Create New</h3>
+                        <button id="closeCreateModal" class="btn-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" id="newItemName" placeholder="Enter name..." class="input-field">
+                        <div class="button-group">
+                            <button id="createFileButton" class="btn-primary">
+                                <i class="fas fa-file"></i> File
+                            </button>
+                            <button id="createFolderButton" class="btn-secondary">
+                                <i class="fas fa-folder"></i> Folder
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="uploadModal" class="modal">
+                <div class="modal-content small">
+                    <div class="modal-header">
+                        <h3>Upload File</h3>
+                        <button id="closeUploadModal" class="btn-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="file" id="fileInput" class="file-input" multiple>
+                        <button id="uploadFilesButton" class="btn-primary full-width">
+                            <i class="fas fa-upload"></i> Upload Selected Files
+                        </button>
+                    </div>
+                </div>
+            </div>
             <div id="editorModal" class="modal">
                 <div class="modal-content large">
                     <div class="editor-header">
