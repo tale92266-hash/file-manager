@@ -109,7 +109,7 @@
 
                 <div class="file-grid" id="fileGrid" role="list" aria-label="List of files and folders">
                     <% if(currentPath !== '/') { %>
-                        <div class="file-item directory" role="listitem" data-path="<%= parentPath %>">
+                        <div class="file-item directory" role="listitem" data-path="<%= parentPath %>" data-type="folder">
                             <i class="bi bi-folder"></i>
                             <span class="file-name">..</span>
                             <div class="file-meta">Parent Directory</div>
