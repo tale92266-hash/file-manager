@@ -272,6 +272,7 @@ function saveFile() {
     .then(data => {
         if (data.success) {
             showNotification('File saved successfully!', 'success');
+            closeFileEditor(); // Ab editor close ho jayega
         } else {
             showNotification('Error saving file: ' + data.error, 'error');
         }
@@ -483,18 +484,3 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPathDisplay.textContent = getBasePath();
     }
 });
-
-// Fix for iOS keyboard covering fixed elements
-if ('visualViewport' in window) {
-    window.visualViewport.onresize = function() {
-        const editorModal = document.getElementById('editorModal');
-        const codeEditor = document.getElementById('codeEditor');
-
-        if (editorModal && editorModal.classList.contains('active')) {
-            const headerHeight = document.querySelector('.editor-header').offsetHeight;
-            const footerHeight = document.querySelector('.editor-footer').offsetHeight;
-            const newHeight = window.visualViewport.height - (headerHeight + footerHeight);
-            codeEditor.style.height = `${newHeight}px`;
-        }
-    };
-}
