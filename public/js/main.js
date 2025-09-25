@@ -3,7 +3,6 @@ let hideHidden = true;
 let selectedFilePath = '';
 let selectedFileName = '';
 let originalContent = ''; // Variable to store original file content
-let isExporting = false; // Flag to check if export is in progress
 
 // Helper function to get the base path from the URL
 function getBasePath() {
@@ -13,10 +12,6 @@ function getBasePath() {
 
 // Navigation functions
 function navigateToPath(path) {
-    if (isExporting) {
-        showNotification('Export is in progress. Please wait.', 'info');
-        return;
-    }
     window.location.href = `/?path=${encodeURIComponent(path)}`;
 }
 
@@ -170,60 +165,8 @@ function copyPath() {
     });
 }
 
-// Export Project Functions
-function showExportModal() {
-    const exportModal = document.getElementById('exportModal');
-    const exportStatusMessage = document.getElementById('exportStatusMessage');
-    const closeExportButton = document.getElementById('closeExportModal');
-
-    exportModal.classList.add('active');
-    isExporting = true;
-    exportStatusMessage.textContent = 'Preparing project export...';
-    closeExportButton.style.display = 'none';
-
-    // Start the export process
-    fetch('/export-project', {
-        method: 'GET' // ya GET, depending on server implementation
-    })
-    .then(response => {
-        // Handle the file download
-        if (response.ok) {
-            return response.blob();
-        } else {
-            throw new Error('Export failed');
-        }
-    })
-    .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `project-export-${Date.now()}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        
-        exportStatusMessage.textContent = 'Export completed successfully!';
-        setTimeout(() => {
-            exportModal.classList.remove('active');
-            isExporting = false;
-        }, 1500);
-
-    })
-    .catch(error => {
-        exportStatusMessage.textContent = `Error during export: ${error.message}`;
-        closeExportButton.style.display = 'block';
-        isExporting = false;
-        showNotification(`Export failed: ${error.message}`, 'error');
-    });
-}
-
 // Create modal functions
 function showCreateModal() {
-    if (isExporting) {
-        showNotification('Export is in progress. Please wait.', 'info');
-        return;
-    }
     document.getElementById('createModal').classList.add('active');
 }
 
@@ -275,10 +218,6 @@ function createItem(type) {
 
 // Upload modal functions
 function showUploadModal() {
-    if (isExporting) {
-        showNotification('Export is in progress. Please wait.', 'info');
-        return;
-    }
     document.getElementById('uploadModal').classList.add('active');
 }
 
@@ -324,11 +263,6 @@ function uploadFiles() {
 
 // Editor modal functions
 function openFileEditor(filePath, fileName) {
-    if (isExporting) {
-        showNotification('Export is in progress. Please wait.', 'info');
-        return;
-    }
-
     const editorModal = document.getElementById('editorModal');
     const editorTitle = document.getElementById('editorTitle');
     const codeEditor = document.getElementById('codeEditor');
@@ -521,10 +455,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.file-item').forEach(item => {
         item.addEventListener('click', (event) => {
             // Stop propagation for options button
-            if (isExporting) {
-                showNotification('Export is in progress. Please wait.', 'info');
-                return;
-            }
             if (event.target.closest('.file-actions')) {
                 return;
             }
@@ -542,10 +472,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners for file action buttons (3 dots)
     document.querySelectorAll('.file-actions button').forEach(button => {
         button.addEventListener('click', (event) => {
-            if (isExporting) {
-                showNotification('Export is in progress. Please wait.', 'info');
-                return;
-            }
             event.stopPropagation(); // Stop event from bubbling to parent file-item
             const item = event.target.closest('.file-item');
             const path = item.dataset.path;
@@ -568,22 +494,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeDeleteModal').addEventListener('click', () => document.getElementById('deleteModal').classList.remove('active'));
     document.getElementById('cancelDeleteButton').addEventListener('click', () => document.getElementById('deleteModal').classList.remove('active'));
     document.getElementById('confirmDeleteButton').addEventListener('click', confirmDelete);
-    
-    // Event listener for Export button
-    const exportProjectButton = document.getElementById('exportProjectButton');
-    if(exportProjectButton) {
-        exportProjectButton.addEventListener('click', showExportModal);
-    }
-    
-    // Close Export modal button
-    const closeExportModalBtn = document.getElementById('closeExportModal');
-    if (closeExportModalBtn) {
-        closeExportModalBtn.addEventListener('click', () => {
-            document.getElementById('exportModal').classList.remove('active');
-            isExporting = false;
-        });
-    }
-
 
     // Event listeners for breadcrumb links
     document.querySelectorAll('.breadcrumb-item').forEach(item => {
