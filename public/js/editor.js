@@ -102,3 +102,9 @@ const cancelButton = document.getElementById('cancelButton');
 if (cancelButton) {
     cancelButton.addEventListener('click', closeFileEditor);
 }
+
+// New custom event listener for opening the editor
+document.addEventListener('open-editor', function(e) {
+    const { filePath, fileName } = e.detail;
+    openFileEditor(filePath, fileName);
+});
