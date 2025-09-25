@@ -78,29 +78,27 @@ function cancelEdit() {
 }
 
 // Event listeners for editor buttons
-document.addEventListener('DOMContentLoaded', function() {
-    const saveFileButton = document.getElementById('saveFileButton');
-    if (saveFileButton) {
-        saveFileButton.addEventListener('click', saveFile);
-    }
+const saveFileButton = document.getElementById('saveFileButton');
+if (saveFileButton) {
+    saveFileButton.addEventListener('click', saveFile);
+}
 
-    const closeEditorButton = document.getElementById('closeEditorButton');
-    if (closeEditorButton) {
-        closeEditorButton.addEventListener('click', closeFileEditor);
-    }
+const closeEditorButton = document.getElementById('closeEditorButton');
+if (closeEditorButton) {
+    closeEditorButton.addEventListener('click', closeFileEditor);
+}
 
-    const clearAllButton = document.getElementById('clearAllButton');
-    if (clearAllButton) {
-        clearAllButton.addEventListener('click', clearEditor);
-    }
+const clearAllButton = document.getElementById('clearAllButton');
+if (clearAllButton) {
+    clearAllButton.addEventListener('click', clearEditor);
+}
 
-    const pasteButton = document.getElementById('pasteButton');
-    if (pasteButton) {
-        pasteButton.addEventListener('click', pasteContent);
-    }
+const pasteButton = document.getElementById('pasteButton');
+if (pasteButton) {
+    pasteButton.addEventListener('click', pasteContent);
+}
 
-    const cancelButton = document.getElementById('cancelButton');
-    if (cancelButton) {
-        cancelButton.addEventListener('click', closeFileEditor);
-    }
-});
+const cancelButton = document.getElementById('cancelButton');
+if (cancelButton) {
+    cancelButton.addEventListener('click', closeFileEditor);
+}
