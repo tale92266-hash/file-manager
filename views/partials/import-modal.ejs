@@ -1,0 +1,20 @@
+<div id="importModal" class="modal">
+    <div class="modal-content small">
+        <div class="modal-header">
+            <h3>Import Project</h3>
+            <button id="closeImportModal" class="btn-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="file" id="zipFileInput" class="file-input" accept=".zip">
+            <button id="uploadZipButton" class="btn-primary full-width">
+                <i class="fas fa-upload"></i> Upload & Import
+            </button>
+            <div id="importLoadingState" class="loading-state" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p id="importStatusMessage">Importing project...</p>
+            </div>
+        </div>
+    </div>
+</div>
