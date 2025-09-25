@@ -12,138 +12,86 @@
     <link rel="stylesheet" href="/css/mobile.css" />
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h3>Menu</h3>
-                <button id="closeSidebarButton" class="btn-icon">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="sidebar-content">
-                <div class="sidebar-section">
-                    <h3 class="section-title">Quick Access</h3>
-                    <div class="quick-links">
-                        <div class="quick-link" data-path="/">
-                            <i class="fas fa-home"></i>
-                            <span>Home</span>
-                        </div>
-                        <div class="quick-link" data-path="/tmp">
-                            <i class="fas fa-folder"></i>
-                            <span>Temp</span>
-                        </div>
-                        <div class="quick-link" data-path="<%= userHomePath %>">
-                            <i class="fas fa-user"></i>
-                            <span>User</span>
-                        </div>
-                    </div>
-                </div>
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="bi bi-list"></i>
+    </button>
 
-                <div class="sidebar-section">
-                    <h3 class="section-title">File Types</h3>
-                    <div class="file-filters">
-                        <div class="filter-item" data-filter="all">
-                            <span class="filter-icon">📄</span>
-                            <span>All Files</span>
-                        </div>
-                        <div class="filter-item" data-filter="code">
-                            <span class="filter-icon">💻</span>
-                            <span>Code Files</span>
-                        </div>
-                        <div class="filter-item" data-filter="images">
-                            <span class="filter-icon">🖼️</span>
-                            <span>Images</span>
-                        </div>
-                        <div class="filter-item" data-filter="hidden">
-                            <span class="filter-icon">👁️</span>
-                            <span>Hidden</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sidebar-section">
-                    <h3 class="section-title">Terminal Info</h3>
-                    <div class="terminal-info">
-                        <div class="info-item">
-                            <strong>Current Path:</strong>
-                            <code id="currentPathDisplay"><%= currentPath %></code>
-                        </div>
-                        <div class="info-item">
-                            <strong>Files Count:</strong>
-                            <span id="fileCount"><%= files.length %></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-        <div class="main-container">
-            <header class="app-header">
-                <div class="header-left">
-                    <button class="sidebar-toggle" id="sidebarToggle">
-                        <i class="bi bi-list"></i>
-                    </button>
-                    <h1 class="app-title">
-                        <i class="bi bi-terminal"></i>
-                    </h1>
-                </div>
-                <div class="header-right">
-                    <button class="btn-primary" id="newButton" aria-label="New">
-                        <i class="bi bi-plus-lg"></i>
-                    </button>
-                    <button class="btn-secondary" id="uploadButton" aria-label="Upload">
-                        <i class="bi bi-upload"></i>
-                    </button>
-                </div>
-            </header>
-
-            <main class="main-content">
-                <nav aria-label="breadcrumb" class="breadcrumb">
-                    <a href="#" class="breadcrumb-item" data-path="/"><i class="bi bi-house"></i></a>
-                    <% pathSegments.forEach(function(segment, idx) { %>
-                        <span class="separator">/</span>
-                        <a href="#" class="breadcrumb-item" data-path="<%= pathSegments.slice(0, idx + 1).join('/') %>"><%= segment %></a>
-                    <% }); %>
-                </nav>
-
-                <div class="file-grid" id="fileGrid" role="list" aria-label="List of files and folders">
-                    <% if(currentPath !== '/') { %>
-                        <div class="file-item directory" role="listitem" data-path="<%= parentPath %>">
-                            <i class="bi bi-folder"></i>
-                            <span class="file-name">..</span>
-                            <div class="file-meta">Parent Directory</div>
-                        </div>
-                    <% } %>
-
-                    <% files.forEach(function(file) { %>
-                        <div class="file-item <%= file.isDirectory ? 'directory' : 'file' %> <%= file.isHidden ? 'hidden-file' : '' %>"
-                             role="listitem"
-                             data-path="<%= file.fullPath %>"
-                             data-type="<%= file.isDirectory ? 'folder' : 'file' %>">
-                            <i class="<%= file.isDirectory ? 'bi bi-folder' : 'bi bi-file-earmark' %>"></i>
-                            <div class="file-info">
-                                <span class="file-name"><%= file.name %></span>
-                                <div class="file-meta">
-                                    <span><%= file.size %></span>
-                                </div>
-                            </div>
-                            <div class="file-actions">
-                                <button class="btn-icon" aria-label="Options"><i class="bi bi-three-dots-vertical"></i></button>
-                            </div>
-                        </div>
-                    <% }); %>
-                </div>
-            </main>
-
-            <div id="createModal" class="modal">...</div>
-            <div id="uploadModal" class="modal">...</div>
-            
-            <%- include('partials/editor') %>
+    <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation">
+        <div class="sidebar-section">
+            <h3>Quick Access</h3>
+            <nav>
+                <ul>
+                    <li><a href="#" data-path="/"><i class="bi bi-house"></i> Home</a></li>
+                    <li><a href="#" data-path="/tmp"><i class="bi bi-folder"></i> Temp</a></li>
+                    <li><a href="#" data-path="<%= userHomePath %>"><i class="bi bi-person"></i> User</a></li>
+                </ul>
+            </nav>
         </div>
-    </div>
-    
+        <div class="sidebar-section">
+            <h3>File Types</h3>
+            <nav>
+                <ul>
+                    <li><a href="#" data-filter="all"><i class="bi bi-file-earmark"></i> All Files</a></li>
+                    <li><a href="#" data-filter="code"><i class="bi bi-laptop-code"></i> Code Files</a></li>
+                    <li><a href="#" data-filter="images"><i class="bi bi-image"></i> Images</a></li>
+                    <li><a href="#" data-filter="hidden"><i class="bi bi-eye-slash"></i> Hidden</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="sidebar-section">
+            <h3>Terminal Info</h3>
+            <div>
+                <strong>Current Path:</strong>
+                <code id="currentPathDisplay"><%= currentPath %></code>
+            </div>
+            <div>
+                <strong>Files Count:</strong>
+                <span id="fileCount"><%= files.length %></span>
+            </div>
+        </div>
+    </aside>
+    <%- include('partials/header') %>
+
+    <main class="main-content">
+        <nav aria-label="breadcrumb" class="breadcrumb">
+            <a href="#" data-path="/"><i class="bi bi-house"></i></a>
+            <% pathSegments.forEach(function(segment, idx) { %>
+                <span class="separator">/</span>
+                <a href="#" data-path="<%= pathSegments.slice(0, idx + 1).join('/') %>"><%= segment %></a>
+            <% }); %>
+        </nav>
+
+        <div class="file-grid" id="fileGrid" role="list" aria-label="List of files and folders">
+            <% if(currentPath !== '/') { %>
+                <div class="file-item directory" role="listitem" data-path="<%= parentPath %>">
+                    <i class="bi bi-folder"></i>
+                    <span class="file-name">..</span>
+                    <div class="file-meta">Parent Directory</div>
+                </div>
+            <% } %>
+
+            <% files.forEach(function(file) { %>
+                <div class="file-item <%= file.isDirectory ? 'directory' : 'file' %> <%= file.isHidden ? 'hidden-file' : '' %>"
+                     role="listitem"
+                     data-path="<%= file.fullPath %>"
+                     data-type="<%= file.isDirectory ? 'folder' : 'file' %>">
+                    <i class="<%= file.isDirectory ? 'bi bi-folder' : 'bi bi-file-earmark' %>"></i>
+                    <span class="file-name"><%= file.name %></span>
+                    <div class="file-meta">
+                        <span><%= file.size %></span>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn-icon" aria-label="Options"><i class="bi bi-three-dots-vertical"></i></button>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </main>
+
     <%- include('partials/footer') %>
 
     <script src="/js/main.js"></script>
     <script src="/js/editor.js"></script>
+
 </body>
 </html>
