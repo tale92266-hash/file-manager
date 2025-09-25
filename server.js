@@ -7,7 +7,7 @@ const archiver = require('archiver');
 const gitignore = require('gitignore-parser');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.env || 3000;
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -31,7 +31,7 @@ app.set('views', './views');
 
 // Helper function to get file icon based on file type
 function getFileIcon(fileName, isDirectory) {
-  if (isDirectory) return 'bi bi-folder-fill'; // Folder icon
+  if (isDirectory) return 'bi bi-folder-fill';
   
   const ext = path.extname(fileName).toLowerCase();
   switch (ext) {
@@ -128,56 +128,54 @@ app.get('/export-project', async (req, res) => {
         zlib: { level: 9 }
     });
 
-    archive.on('error', (err) => {
-        res.status(500).send({ error: err.message });
-    });
-
-    // Finalize the archive after all data has been appended
-    res.on('close', () => {
-        console.log('Archive has been finalized and the output file descriptor has closed.');
-        console.log(archive.pointer() + ' total bytes');
-    });
-
-    // Set the archive name and type for download
+    // Set response headers for download
     res.attachment('project-export.zip');
     archive.pipe(res);
 
+    archive.on('error', (err) => {
+        console.error('Archiver Error:', err);
+        // Check if headers have already been sent before sending a new response
+        if (!res.headersSent) {
+             res.status(500).send({ error: err.message });
+        }
+    });
+
     try {
-        let ignore;
+        let ignore = null;
         const gitignorePath = path.join(currentPath, '.gitignore');
         if (await fs.pathExists(gitignorePath)) {
             const ignoreFileContent = await fs.readFile(gitignorePath, 'utf8');
             ignore = gitignore.parse(ignoreFileContent);
         }
 
-        // Recursively add files and folders to the archive
-        const addFilesToArchive = async (dirPath) => {
+        const addFilesToArchive = async (dirPath, rootPath) => {
             const files = await fs.readdir(dirPath, { withFileTypes: true });
-            
+
             for (const file of files) {
                 const filePath = path.join(dirPath, file.name);
-                const relativePath = path.relative(currentPath, filePath);
-                
-                // Skip if ignored by gitignore
+                const relativePath = path.relative(rootPath, filePath);
+
                 if (ignore && !ignore.accepts(relativePath)) {
                     continue;
                 }
 
                 if (file.isDirectory()) {
-                    await addFilesToArchive(filePath);
+                    await addFilesToArchive(filePath, rootPath);
                 } else {
                     archive.file(filePath, { name: relativePath });
                 }
             }
         };
 
-        await addFilesToArchive(currentPath);
-        archive.directory(currentPath, false);
+        await addFilesToArchive(currentPath, currentPath);
+        
         archive.finalize();
 
     } catch (error) {
         console.error('Export Error:', error);
-        res.status(500).send({ error: error.message });
+        if (!res.headersSent) {
+             res.status(500).send({ error: error.message });
+        }
     }
 });
 
