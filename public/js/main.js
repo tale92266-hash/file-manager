@@ -718,7 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const importGitButton = document.getElementById('importGitButton');
     if (importGitButton) {
-        importGitButton.addEventListener('click', importFromGit);
+        importGitButton.addEventListener('click', showImportModal); // Yahan fix kiya gaya hai
     }
     
     const uploadButton = document.getElementById('uploadButton');
