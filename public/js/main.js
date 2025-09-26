@@ -470,7 +470,9 @@ function importFromGit() {
     
     fetch('/import-git', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
             repoUrl: repoUrl,
             currentPath: currentPath
@@ -486,7 +488,7 @@ function importFromGit() {
         }
     })
     .catch(error => {
-        showNotification('Error: ' + error.message, 'error');
+        showNotification('Error importing from Git: ' + error.message, 'error');
     });
 }
 
@@ -542,6 +544,50 @@ function uploadZip() {
     }
 }
 
+// New Upload Multiple Files functions
+function showUploadFilesModal() {
+    document.getElementById('uploadFilesModal').classList.add('active');
+}
+
+function closeUploadFilesModal() {
+    document.getElementById('uploadFilesModal').classList.remove('active');
+    document.getElementById('filesInput').value = '';
+}
+
+function uploadMultipleFiles() {
+    const fileInput = document.getElementById('filesInput');
+    if (fileInput.files.length === 0) {
+        showNotification('Please select at least one file to upload.', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    for (const file of fileInput.files) {
+        formData.append('files', file);
+    }
+    formData.append('currentPath', getBasePath());
+    
+    closeUploadFilesModal();
+    showNotification(`Uploading ${fileInput.files.length} file(s)...`, 'info');
+
+    fetch('/upload-files', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            showNotification('Error uploading files: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error during file upload: ' + error.message, 'error');
+    });
+}
+
 // New Export to Zip function
 function exportToZip() {
     const currentPath = getBasePath();
@@ -564,7 +610,6 @@ function exportToZip() {
         hideProcessingModal();
         if (data.success) {
             showNotification(`Export successful! File size: ${data.fileSize}. Your download will begin shortly.`, 'success');
-            // Download ko trigger karein
             window.location.href = `/download-zip-file?path=${encodeURIComponent(data.filePath)}`;
         } else {
             showNotification('Export failed: ' + data.error, 'error');
@@ -667,6 +712,11 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadButton.addEventListener('click', showUploadModal);
     }
 
+    const uploadFilesBtn = document.getElementById('uploadFilesBtn');
+    if(uploadFilesBtn) {
+        uploadFilesBtn.addEventListener('click', showUploadFilesModal);
+    }
+
     const exportButton = document.getElementById('exportButton');
     if(exportButton) {
         exportButton.addEventListener('click', exportToZip);
@@ -703,6 +753,18 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadZipButton.addEventListener('click', uploadZip);
     }
 
+    const closeUploadFilesModalBtn = document.getElementById('closeUploadFilesModal');
+    if(closeUploadFilesModalBtn) {
+        closeUploadFilesModalBtn.addEventListener('click', closeUploadFilesModal);
+    }
+    const cancelUploadFilesButton = document.getElementById('cancelUploadFilesButton');
+    if(cancelUploadFilesButton) {
+        cancelUploadFilesButton.addEventListener('click', closeUploadFilesModal);
+    }
+    const uploadFilesButton = document.getElementById('uploadFilesButton');
+    if(uploadFilesButton) {
+        uploadFilesButton.addEventListener('click', uploadMultipleFiles);
+    }
 
     const saveFileButton = document.getElementById('saveFileButton');
     if (saveFileButton) {

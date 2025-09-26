@@ -117,6 +117,9 @@
                     <button class="btn-primary" id="uploadButton" aria-label="Upload Zip">
                         <i class="bi bi-upload"></i>
                     </button>
+                    <button class="btn-primary" id="uploadFilesBtn" aria-label="Upload Files">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </button>
                     <button class="btn-primary" id="exportButton" aria-label="Export to Zip">
                         <i class="fas fa-file-export"></i>
                     </button>
@@ -200,6 +203,7 @@
             
             <%- include('partials/import-modal') %>
             <%- include('partials/upload-modal') %>
+            <%- include('partials/upload-files-modal') %>
             <%- include('partials/processing-modal') %>
             <%- include('partials/editor') %>
             <%- include('partials/context-menu') %>
