@@ -449,6 +449,7 @@ function showNotification(message, type = 'info') {
 // Git Import functions
 function showImportModal() {
     document.getElementById('importModal').classList.add('active');
+    document.getElementById('headerActionsModal').classList.remove('active');
 }
 
 function closeImportModal() {
@@ -495,6 +496,7 @@ function importFromGit() {
 // ZIP Upload functions
 function showUploadModal() {
     document.getElementById('uploadModal').classList.add('active');
+    document.getElementById('headerActionsModal').classList.remove('active');
 }
 
 function closeUploadModal() {
@@ -547,6 +549,7 @@ function uploadZip() {
 // New Upload Multiple Files functions
 function showUploadFilesModal() {
     document.getElementById('uploadFilesModal').classList.add('active');
+    document.getElementById('headerActionsModal').classList.remove('active');
 }
 
 function closeUploadFilesModal() {
@@ -588,7 +591,7 @@ function uploadMultipleFiles() {
     });
 }
 
-// New Export to Zip function
+// Export to Zip function
 function exportToZip() {
     const currentPath = getBasePath();
     showProcessingModal();
@@ -627,6 +630,12 @@ function showProcessingModal() {
 
 function hideProcessingModal() {
     document.getElementById('processingModal').classList.remove('active');
+}
+
+
+// New show header actions modal
+function showHeaderActionsModal() {
+    document.getElementById('headerActionsModal').classList.add('active');
 }
 
 
@@ -702,9 +711,14 @@ document.addEventListener('DOMContentLoaded', function() {
         newButton.addEventListener('click', showCreateModal);
     }
 
+    const showActionsBtn = document.getElementById('showActionsBtn');
+    if (showActionsBtn) {
+        showActionsBtn.addEventListener('click', showHeaderActionsModal);
+    }
+
     const importGitButton = document.getElementById('importGitButton');
     if (importGitButton) {
-        importGitButton.addEventListener('click', showImportModal);
+        importGitButton.addEventListener('click', importFromGit);
     }
     
     const uploadButton = document.getElementById('uploadButton');
@@ -815,6 +829,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const createFolderButton = document.getElementById('createFolderButton');
     if (createFolderButton) {
         createFolderButton.addEventListener('click', () => createItem('folder'));
+    }
+    const closeHeaderActionsModalBtn = document.getElementById('closeHeaderActionsModal');
+    if (closeHeaderActionsModalBtn) {
+        closeHeaderActionsModalBtn.addEventListener('click', () => {
+            document.getElementById('headerActionsModal').classList.remove('active');
+        });
     }
 
     document.addEventListener('click', function(event) {
