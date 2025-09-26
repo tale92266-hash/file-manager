@@ -13,82 +13,83 @@
     <link rel="stylesheet" href="/css/editor.css" />
     <link rel="stylesheet" href="/css/sidebar.css" />
     <link rel="stylesheet" href="/css/file-grid.css" />
+    <link rel="stylesheet" href="/css/upload-modal.css" />
 </head>
 <body>
     <div class="app-container">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
    
-             <h3>Menu</h3>
+              <h3>Menu</h3>
                 <button id="closeSidebarButton" class="btn-icon">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="sidebar-content">
       
-          <div class="sidebar-section">
+           <div class="sidebar-section">
                     <h3 class="section-title">Quick Access</h3>
                     <div class="quick-links">
                         <div class="quick-link" data-path="/">
                     
-        <i class="fas fa-home"></i>
+         <i class="fas fa-home"></i>
                             <span>Home</span>
                         </div>
                         <div class="quick-link" data-path="/tmp">
             
-                <i class="fas fa-folder"></i>
+                 <i class="fas fa-folder"></i>
                             <span>Temp</span>
                         </div>
                         <div class="quick-link" data-path="<%= userHomePath %>">
   
-                          <i class="fas fa-user"></i>
+                           <i class="fas fa-user"></i>
                             <span>User</span>
                         </div>
                     
-</div>
+ </div>
                 </div>
 
                 <div class="sidebar-section">
                     <h3 class="section-title">File Types</h3>
                     <div class="file-filters">
                         
-<div class="filter-item" data-filter="all">
+ <div class="filter-item" data-filter="all">
                             <span class="filter-icon">📄</span>
                             <span>All Files</span>
                         </div>
                 
-        <div class="filter-item" data-filter="code">
+         <div class="filter-item" data-filter="code">
                             <span class="filter-icon">💻</span>
                             <span>Code Files</span>
                         </div>
         
-                <div class="filter-item" data-filter="images">
+                 <div class="filter-item" data-filter="images">
                             <span class="filter-icon">🖼️</span>
                             <span>Images</span>
                         </div>
  
-                       <div class="filter-item" data-filter="hidden">
+                        <div class="filter-item" data-filter="hidden">
                             <span class="filter-icon">👁️</span>
                             <span>Hidden</span>
                   
-      </div>
+       </div>
                     </div>
                 </div>
 
                 <div class="sidebar-section">
                     <h3 class="section-title">Terminal Info</h3>
                    
- <div class="terminal-info">
+  <div class="terminal-info">
                         <div class="info-item">
                             <strong>Current Path:</strong>
                             <code id="currentPathDisplay"><%= currentPath %></code>
              
-           </div>
+            </div>
                         <div class="info-item">
                             <strong>Files Count:</strong>
                             <span id="fileCount"><%= files.length %></span>
     
-                    </div>
+                     </div>
                     </div>
                 </div>
             </div>
@@ -96,18 +97,18 @@
         <div class="main-container">
             <header class="app-header">
   
-              <div class="header-left">
+               <div class="header-left">
                     <button class="sidebar-toggle" id="sidebarToggle">
                         <i class="bi bi-list"></i>
                     </button>
                  
-   <h1 class="app-title">
+    <h1 class="app-title">
                         <i class="bi bi-terminal"></i>
                     </h1>
                 </div>
                 <div class="header-right">
                  
-   <button class="btn-primary" id="newButton" aria-label="New">
+    <button class="btn-primary" id="newButton" aria-label="New">
                         <i class="bi bi-plus-lg"></i>
                     </button>
                     <button class="btn-primary" id="importGitButton" aria-label="Import from Git">
@@ -124,49 +125,49 @@
 
             <main class="main-content">
        
-         <nav aria-label="breadcrumb" class="breadcrumb">
+          <nav aria-label="breadcrumb" class="breadcrumb">
                     <a href="#" class="breadcrumb-item" data-path="/"><i class="bi bi-house"></i></a>
                     <% pathSegments.forEach(function(segment, idx) { %>
                         <span class="separator">/</span>
                
-         <a href="#" class="breadcrumb-item" data-path="/<%= pathSegments.slice(0, idx + 1).join('/') %>"><%= segment %></a>
+          <a href="#" class="breadcrumb-item" data-path="/<%= pathSegments.slice(0, idx + 1).join('/') %>"><%= segment %></a>
                     <% });
-%>
+ %>
                 </nav>
 
                 <div class="file-grid" id="fileGrid" role="list" aria-label="List of files and folders">
                     <% if(currentPath !== '/') { %>
                         <div class="file-item parent-dir-item" role="listitem" data-path="<%= parentPath %>" data-type="folder">
     
-                        <i class="bi bi-box-arrow-left"></i>
+                         <i class="bi bi-box-arrow-left"></i>
                             <span class="file-name">..</span>
                             <div class="file-meta">Parent Directory</div>
                
-         </div>
+          </div>
                     <% } %>
 
                     <% files.forEach(function(file) { %>
                         <div class="file-item <%= file.isDirectory ? 'directory-item' : 'file-item' %>"
               
-                 data-path="<%= file.fullPath %>"
+                  data-path="<%= file.fullPath %>"
                                data-type="<%= file.isDirectory ? 'folder' : 'file' %>">
                             <i class="<%= file.iconClass %>"></i>
              
-               <div class="file-info">
+                <div class="file-info">
                                 <span class="file-name"><%= file.name %></span>
                                 <div class="file-meta">
                 
-                    <span><%= file.size %></span>
+                     <span><%= file.size %></span>
                                 </div>
                             </div>
                   
-          <div class="file-actions">
+           <div class="file-actions">
                                 <button class="btn-icon" aria-label="Options"><i class="bi bi-three-dots-vertical"></i></button>
                             </div>
                         </div>
  
                    <% });
-%>
+ %>
                 </div>
             </main>
 
@@ -174,37 +175,38 @@
                 <div class="modal-content small">
                     <div class="modal-header">
                    
-     <h3>Create New</h3>
+      <h3>Create New</h3>
                         <button id="closeCreateModal" class="btn-close">
                             <i class="fas fa-times"></i>
                         </button>
               
-      </div>
+       </div>
                     <div class="modal-body">
                         <input type="text" id="newItemName" placeholder="Enter name..." class="input-field">
                         <div class="button-group">
                    
-         <button id="createFileButton" class="btn-primary">
+          <button id="createFileButton" class="btn-primary">
                                 <i class="fas fa-file"></i> File
                             </button>
                           
-  <button id="createFolderButton" class="btn-secondary">
+   <button id="createFolderButton" class="btn-secondary">
                                 <i class="fas fa-folder"></i> Folder
                             </button>
                         </div>
          
-           </div>
+            </div>
                 </div>
             </div>
             
             <%- include('partials/import-modal') %>
             <%- include('partials/upload-modal') %>
-            <%- include('partials/processing-modal') %> <%- include('partials/editor') %>
+            <%- include('partials/processing-modal') %>
+            <%- include('partials/editor') %>
             <%- include('partials/context-menu') %>
             <%- include('partials/rename-modal') %>
             <%- include('partials/delete-modal') %>
      
-   </div>
+    </div>
     </div>
     
     <%- include('partials/footer') %>
