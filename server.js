@@ -446,13 +446,21 @@ app.ws('/terminal', (ws, req) => {
                 ws.send(JSON.stringify({ output: message, type: 'error' }));
                 activeProcess = null;
             });
-
         } else if (type === 'ctrlc') {
             if (activeProcess) {
                 activeProcess.kill('SIGINT');
                 ws.send(JSON.stringify({ output: '\r\nProcess terminated by user.\r\n', type: 'status' }));
             } else {
                 ws.send(JSON.stringify({ output: '\r\nNo active process to stop.\r\n', type: 'error' }));
+            }
+        }
+        else if (type === 'kill') {
+            if (activeProcess) {
+                activeProcess.kill('SIGKILL');
+                activeProcess = null;
+                ws.send(JSON.stringify({ output: '\r\nRunning process forcefully terminated.\r\n', type: 'status' }));
+            } else {
+                ws.send(JSON.stringify({ output: '\r\nNo active process to terminate.\r\n', type: 'info' }));
             }
         }
     });
