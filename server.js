@@ -315,23 +315,12 @@ app.post('/import-zip', (req, res, next) => {
 
       console.log('Zip file extracted successfully.');
 
-<<<<<<< HEAD
-      // Extract hone ke baad, root folder ka naam dhoondhein
-=======
->>>>>>> 2aef6e1 (first push)
       const filesInTemp = await fs.readdir(tempExtractionPath, { withFileTypes: true });
       const rootFolder = filesInTemp.find(item => item.isDirectory());
       
       if (!rootFolder) {
-<<<<<<< HEAD
-        // Agar root folder nahi mila, to seedhe files copy karein
         await fs.copy(tempExtractionPath, currentPath, { overwrite: true });
       } else {
-        // Agar root folder mila, to uske contents copy karein
-=======
-        await fs.copy(tempExtractionPath, currentPath, { overwrite: true });
-      } else {
->>>>>>> 2aef6e1 (first push)
         const rootFolderPath = path.join(tempExtractionPath, rootFolder.name);
         await fs.copy(rootFolderPath, currentPath, { overwrite: true });
       }
@@ -340,48 +329,14 @@ app.post('/import-zip', (req, res, next) => {
       
       await fs.remove(zipFilePath);
       await fs.remove(tempExtractionPath);
-<<<<<<< HEAD
-      console.log('Temporary files deleted.');
-=======
       console.log('Temporary files and folders deleted.');
->>>>>>> 2aef6e1 (first push)
 
       res.json({ success: true, message: 'Files imported successfully from ZIP!' });
     } catch (error) {
       console.error('Zip import error:', error);
       res.status(500).json({ success: false, error: error.message });
-<<<<<<< HEAD
     }
   });
-=======
-    }
-  });
-});
-
-// New route to upload multiple files
-app.post('/upload-files', upload.array('files'), async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, error: 'No files were uploaded.' });
-    }
-    
-    const currentPath = req.body.currentPath;
-    
-    const promises = req.files.map(file => {
-      const oldPath = file.path;
-      const newPath = path.join(currentPath, file.originalname);
-      return fs.move(oldPath, newPath, { overwrite: true });
-    });
-    
-    await Promise.all(promises);
-    
-    res.json({ success: true, message: `${req.files.length} file(s) uploaded successfully!` });
-    
-  } catch (error) {
-    console.error('Multiple file upload error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
->>>>>>> 2aef6e1 (first push)
 });
 
 app.post('/export-zip', async (req, res) => {
