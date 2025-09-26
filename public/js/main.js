@@ -362,18 +362,23 @@ function clearEditor() {
 }
 
 function pasteContent() {
-    navigator.clipboard.readText().then(text => {
-        const codeEditor = document.getElementById('codeEditor');
-        codeEditor.value += text;
-        showNotification('Pasted content from clipboard!', 'info');
-        const saveButton = document.getElementById('saveFileButton');
+    const codeEditor = document.getElementById('codeEditor');
+    const saveButton = document.getElementById('saveFileButton');
+    codeEditor.focus(); // Paste ke liye focus zaroori hai
+    try {
+        const success = document.execCommand('paste');
+        if (success) {
+            showNotification('Pasted content from clipboard!', 'info');
+        } else {
+            throw new Error('execCommand failed');
+        }
         saveButton.disabled = codeEditor.value === originalContent;
         if (codeEditor.value !== originalContent) {
             document.getElementById('unsavedChangesStar').style.display = 'inline';
         }
-    }).catch(err => {
-        showNotification('Failed to read clipboard content.', 'error');
-    });
+    } catch (err) {
+        showNotification('Failed to paste content. Please use system paste options.', 'error');
+    }
 }
 
 function selectAll() {
@@ -384,30 +389,65 @@ function selectAll() {
 
 function cutContent() {
     const codeEditor = document.getElementById('codeEditor');
-    navigator.clipboard.writeText(codeEditor.value)
-    .then(() => {
-        codeEditor.value = '';
-        showNotification('Content cut to clipboard!', 'info');
-        const saveButton = document.getElementById('saveFileButton');
-        saveButton.disabled = codeEditor.value === originalContent;
-        if (codeEditor.value !== originalContent) {
-            document.getElementById('unsavedChangesStar').style.display = 'inline';
+    const saveButton = document.getElementById('saveFileButton');
+    
+    // Create a temporary textarea to perform the cut operation without affecting the main editor's selection/focus
+    const tempTextarea = document.createElement('textarea');
+    tempTextarea.value = codeEditor.value;
+    tempTextarea.setAttribute('readonly', '');
+    tempTextarea.style.position = 'absolute';
+    tempTextarea.style.left = '-9999px';
+    document.body.appendChild(tempTextarea);
+
+    tempTextarea.select();
+    tempTextarea.setSelectionRange(0, 99999);
+    
+    try {
+        const success = document.execCommand('cut');
+        if (success) {
+            // Manual cut operation on the main editor
+            codeEditor.value = '';
+            showNotification('Content cut to clipboard!', 'info');
+            saveButton.disabled = codeEditor.value === originalContent;
+            if (codeEditor.value !== originalContent) {
+                document.getElementById('unsavedChangesStar').style.display = 'inline';
+            }
+        } else {
+            throw new Error('execCommand failed');
         }
-    })
-    .catch(err => {
-        showNotification('Failed to cut content.', 'error');
-    });
+    } catch (err) {
+        showNotification('Failed to cut content. Please use system cut options.', 'error');
+    } finally {
+        document.body.removeChild(tempTextarea);
+    }
 }
 
 function copyContent() {
     const codeEditor = document.getElementById('codeEditor');
-    navigator.clipboard.writeText(codeEditor.value)
-    .then(() => {
-        showNotification('Content copied to clipboard!', 'success');
-    })
-    .catch(err => {
-        showNotification('Failed to copy content.', 'error');
-    });
+    const content = codeEditor.value;
+    
+    const tempTextarea = document.createElement('textarea');
+    tempTextarea.value = content;
+    tempTextarea.setAttribute('readonly', '');
+    tempTextarea.style.position = 'absolute';
+    tempTextarea.style.left = '-9999px';
+    document.body.appendChild(tempTextarea);
+    
+    tempTextarea.select();
+    tempTextarea.setSelectionRange(0, 99999);
+    
+    try {
+        const success = document.execCommand('copy');
+        if (success) {
+            showNotification('Content copied to clipboard!', 'success');
+        } else {
+            throw new Error('execCommand failed');
+        }
+    } catch (err) {
+        showNotification('Failed to copy content. Please use system copy options.', 'error');
+    } finally {
+        document.body.removeChild(tempTextarea);
+    }
 }
 
 
@@ -532,7 +572,7 @@ function uploadZip() {
     formData.append('currentPath', getBasePath());
     
     closeUploadModal();
-    showNotification('Uploading and extracting zip file...', 'info');
+    showProcessingModal(); // Show processing modal during upload
 
     try {
         fetch('/import-zip', {
@@ -546,6 +586,7 @@ function uploadZip() {
             return response.json();
         })
         .then(data => {
+            hideProcessingModal();
             if (data.success) {
                 showNotification(data.message, 'success');
                 setTimeout(() => window.location.reload(), 2000);
@@ -554,9 +595,11 @@ function uploadZip() {
             }
         })
         .catch(error => {
+            hideProcessingModal();
             showNotification('Error during upload: ' + error.message, 'error');
         });
     } catch (error) {
+        hideProcessingModal();
         showNotification('Client-side error: ' + error.message, 'error');
     }
 }
@@ -586,7 +629,7 @@ function uploadMultipleFiles() {
     formData.append('currentPath', getBasePath());
     
     closeUploadFilesModal();
-    showNotification(`Uploading ${fileInput.files.length} file(s)...`, 'info');
+    showProcessingModal(); // Show processing modal during upload
 
     fetch('/upload-files', {
         method: 'POST',
@@ -594,6 +637,7 @@ function uploadMultipleFiles() {
     })
     .then(response => response.json())
     .then(data => {
+        hideProcessingModal();
         if (data.success) {
             showNotification(data.message, 'success');
             setTimeout(() => window.location.reload(), 2000);
@@ -602,6 +646,7 @@ function uploadMultipleFiles() {
         }
     })
     .catch(error => {
+        hideProcessingModal();
         showNotification('Error during file upload: ' + error.message, 'error');
     });
 }
