@@ -3,21 +3,34 @@ const fs = require('fs-extra');
 const path = require('path');
 const mime = require('mime-types');
 const { parseGitignore } = require('parse-gitignore-ts');
-const simpleGit = require('simple-git'); // <-- Yeh line add karein
+const simpleGit = require('simple-git'); 
+const multer = require('multer'); 
+const AdmZip = require('adm-zip'); 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Ensure the directory exists
+    const tempDir = 'uploads/';
+    fs.ensureDirSync(tempDir);
+    cb(null, tempDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({ storage: storage });
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', './views');
 
-// Helper function to get file icon based on file type
 function getFileIcon(fileName, isDirectory) {
-  if (isDirectory) return 'bi bi-folder-fill'; // Folder icon
+  if (isDirectory) return 'bi bi-folder-fill'; 
   
   const ext = path.extname(fileName).toLowerCase();
   switch (ext) {
@@ -61,13 +74,11 @@ function getFileIcon(fileName, isDirectory) {
   }
 }
 
-// Main route
 app.get('/', async (req, res) => {
   try {
     const currentPath = req.query.path || process.cwd();
     const files = await fs.readdir(currentPath, { withFileTypes: true });
     
-    // Get user's home directory path
     const userHomePath = path.join(require('os').homedir());
     
     const fileList = await Promise.all(
@@ -79,7 +90,6 @@ app.get('/', async (req, res) => {
           name: file.name,
           isDirectory: file.isDirectory(),
           size: file.isDirectory() ? '-' : formatFileSize(stats.size),
-          // removed 'modified' attribute
           iconClass: getFileIcon(file.name, file.isDirectory()),
           isHidden: file.name.startsWith('.'),
           fullPath: filePath,
@@ -88,7 +98,6 @@ app.get('/', async (req, res) => {
       })
     );
 
-    // Sort: directories first, then files
     fileList.sort((a, b) => {
       if (a.isDirectory && !b.isDirectory) return -1;
       if (!a.isDirectory && b.isDirectory) return 1;
@@ -107,7 +116,6 @@ app.get('/', async (req, res) => {
   }
 });
 
-// File content route
 app.get('/file-content', async (req, res) => {
   try {
     const filePath = req.query.path;
@@ -118,7 +126,6 @@ app.get('/file-content', async (req, res) => {
   }
 });
 
-// Save file content
 app.post('/save-file', async (req, res) => {
   try {
     const { filePath, content } = req.body;
@@ -129,7 +136,6 @@ app.post('/save-file', async (req, res) => {
   }
 });
 
-// Create new file/folder
 app.post('/create', async (req, res) => {
   try {
     const { name, type, currentPath } = req.body;
@@ -147,7 +153,6 @@ app.post('/create', async (req, res) => {
   }
 });
 
-// Delete file/folder
 app.delete('/delete', async (req, res) => {
   try {
     const { path: itemPath } = req.body;
@@ -158,7 +163,6 @@ app.delete('/delete', async (req, res) => {
   }
 });
 
-// Rename file/folder
 app.post('/rename', async (req, res) => {
   try {
     const { oldPath, newName } = req.body;
@@ -170,7 +174,6 @@ app.post('/rename', async (req, res) => {
   }
 });
 
-// New Download file route
 app.get('/download', (req, res) => {
   const filePath = req.query.path;
   res.download(filePath, (err) => {
@@ -185,7 +188,6 @@ app.get('/download', (req, res) => {
   });
 });
 
-// New Download folder route (as ZIP)
 app.get('/download-folder', (req, res) => {
     const folderPath = req.query.path;
     const folderName = path.basename(folderPath);
@@ -202,11 +204,10 @@ app.get('/download-folder', (req, res) => {
     });
 
     archive.pipe(res);
-    archive.directory(folderPath, false); // false means don't include the folder's base directory in the zip
+    archive.directory(folderPath, false);
     archive.finalize();
 });
 
-// New route to import from Git
 app.post('/import-git', async (req, res) => {
   try {
     const { repoUrl, currentPath } = req.body;
@@ -214,16 +215,13 @@ app.post('/import-git', async (req, res) => {
       return res.status(400).json({ success: false, error: 'GitHub repository URL is required.' });
     }
 
-    // Git repo URL se repo name extract karein
     const repoName = path.basename(repoUrl, path.extname(repoUrl));
     const targetPath = path.join(currentPath, repoName);
 
-    // Agar directory pehle se maujood hai to use remove karein
     if (await fs.pathExists(targetPath)) {
       await fs.remove(targetPath);
     }
     
-    // Repository clone karein
     await simpleGit().clone(repoUrl, targetPath);
 
     res.json({ success: true, message: `Repository '${repoName}' cloned successfully!` });
@@ -234,8 +232,32 @@ app.post('/import-git', async (req, res) => {
   }
 });
 
+app.post('/import-zip', upload.single('zipFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded.' });
+    }
 
-// Helper function
+    const zipFilePath = req.file.path;
+    const currentPath = req.body.currentPath;
+
+    if (!fs.existsSync(zipFilePath)) {
+      return res.status(404).json({ success: false, error: 'Zip file not found on server.' });
+    }
+
+    const zip = new AdmZip(zipFilePath);
+    zip.extractAllTo(currentPath, true); 
+
+    await fs.remove(zipFilePath);
+
+    res.json({ success: true, message: 'Files imported successfully from ZIP!' });
+
+  } catch (error) {
+    console.error('Zip import error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;

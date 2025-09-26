@@ -211,7 +211,7 @@ function downloadFile() {
 
     const a = document.createElement('a');
     a.href = downloadUrl;
-    a.download = selectedFileName; // This helps suggest the file name
+    a.download = selectedFileName; 
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -252,10 +252,8 @@ function createItem(type) {
             closeCreateModal();
             
             if (type === 'file') {
-                // Editor open karein naye file ke liye
                 openFileEditor(`${currentPath}/${name}`, name);
             } else {
-                // Folders ke liye page reload karein
                 setTimeout(() => window.location.reload(), 1000);
             }
 
@@ -279,30 +277,25 @@ function openFileEditor(filePath, fileName) {
     editorTitle.textContent = fileName;
     editorModal.classList.add('active');
 
-    // Show loading state
     codeEditor.value = '';
     codeEditor.classList.add('loading');
     codeEditor.readOnly = true;
 
-    // Fetch file content and populate editor
     fetch(`/file-content?path=${encodeURIComponent(filePath)}`)
         .then(response => response.json())
         .then(data => {
-            // Remove loading state
             codeEditor.classList.remove('loading');
             codeEditor.readOnly = false;
 
             if (data.content !== null && data.content !== undefined) {
                 if (data.content.trim() === '') {
-                    // Empty file case
                     codeEditor.value = 'This file is empty. You can start typing to add content.';
                     originalContent = '';
                 } else {
-                    // File has content
                     codeEditor.value = data.content;
                     originalContent = data.content;
                 }
-                saveButton.disabled = true; // Initially button ko disable karein
+                saveButton.disabled = true;
             } else {
                 codeEditor.value = 'Error loading file content.';
                 showNotification('Error loading file: ' + data.error, 'error');
@@ -310,7 +303,6 @@ function openFileEditor(filePath, fileName) {
             }
         })
         .catch(error => {
-            // Remove loading state and show error
             codeEditor.classList.remove('loading');
             codeEditor.readOnly = false;
             codeEditor.value = 'Error loading file content.';
@@ -340,8 +332,8 @@ function saveFile() {
     .then(data => {
         if (data.success) {
             showNotification('File saved successfully!', 'success');
-            originalContent = content; // New content ko original maan lein
-            document.getElementById('saveFileButton').disabled = true; // Button ko disable karein
+            originalContent = content;
+            document.getElementById('saveFileButton').disabled = true;
             closeFileEditor();
         } else {
             showNotification('Error saving file: ' + data.error, 'error');
@@ -372,7 +364,6 @@ function pasteContent() {
     });
 }
 
-// New functions for Cut, Copy, Select All
 function selectAll() {
     const codeEditor = document.getElementById('codeEditor');
     codeEditor.select();
@@ -406,7 +397,6 @@ function copyContent() {
 
 
 function cancelEdit() {
-    // Re-load the content from the file to revert changes
     openFileEditor(selectedFilePath, document.getElementById('editorTitle').textContent);
     showNotification('Changes cancelled!', 'info');
 }
@@ -421,7 +411,6 @@ function showNotification(message, type = 'info') {
         <span>${message}</span>
     `;
     
-    // Add notification styles if not already present
     if (!document.querySelector('.notification-styles')) {
         const style = document.createElement('style');
         style.className = 'notification-styles';
@@ -457,7 +446,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// New Git Import functions
+// Git Import functions
 function showImportModal() {
     document.getElementById('importModal').classList.add('active');
 }
@@ -501,17 +490,69 @@ function importFromGit() {
     });
 }
 
+// New ZIP Upload functions
+function showUploadModal() {
+    document.getElementById('uploadModal').classList.add('active');
+}
+
+function closeUploadModal() {
+    document.getElementById('uploadModal').classList.remove('active');
+    document.getElementById('zipFileInput').value = ''; // File input ko reset karein
+}
+
+function uploadZip() {
+    const fileInput = document.getElementById('zipFileInput');
+    if (fileInput.files.length === 0) {
+        showNotification('Please select a zip file to upload.', 'error');
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('zipFile', file);
+    formData.append('currentPath', getBasePath());
+    
+    closeUploadModal();
+    showNotification('Uploading and extracting zip file...', 'info');
+
+    try {
+        fetch('/import-zip', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Agar response successful nahi hai, to error throw karein
+                throw new Error('Server returned an error: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showNotification('Error uploading zip: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            // Is block mein network aur server-side errors ko handle karein
+            showNotification('Error during upload: ' + error.message, 'error');
+        });
+    } catch (error) {
+        // Is block mein client-side errors ko handle karein
+        showNotification('Client-side error: ' + error.message, 'error');
+    }
+}
+
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
-    // Event listeners for file items
     document.querySelectorAll('.file-item').forEach(item => {
         item.addEventListener('click', (event) => {
-            // Stop propagation for options button
             if (event.target.closest('.file-actions')) {
                 return;
             }
-
             const path = item.dataset.path;
             const type = item.dataset.type;
             if (type === 'folder') {
@@ -522,10 +563,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Event listeners for file action buttons (3 dots)
     document.querySelectorAll('.file-actions button').forEach(button => {
         button.addEventListener('click', (event) => {
-            event.stopPropagation(); // Stop event from bubbling to parent file-item
+            event.stopPropagation();
             const item = event.target.closest('.file-item');
             const path = item.dataset.path;
             const name = item.querySelector('.file-name').textContent;
@@ -533,24 +573,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Event listeners for context menu items
     document.getElementById('renameMenuItem').addEventListener('click', renameFile);
     document.getElementById('deleteMenuItem').addEventListener('click', deleteFile);
     document.getElementById('copyPathMenuItem').addEventListener('click', copyPath);
     document.getElementById('downloadMenuItem').addEventListener('click', downloadFile);
 
-
-    // Event listeners for rename modal buttons
     document.getElementById('closeRenameModal').addEventListener('click', () => document.getElementById('renameModal').classList.remove('active'));
     document.getElementById('cancelRenameButton').addEventListener('click', () => document.getElementById('renameModal').classList.remove('active'));
     document.getElementById('saveRenameButton').addEventListener('click', saveRenamedFile);
 
-    // Event listeners for delete modal buttons
     document.getElementById('closeDeleteModal').addEventListener('click', () => document.getElementById('deleteModal').classList.remove('active'));
     document.getElementById('cancelDeleteButton').addEventListener('click', () => document.getElementById('deleteModal').classList.remove('active'));
     document.getElementById('confirmDeleteButton').addEventListener('click', confirmDelete);
 
-    // Event listeners for breadcrumb links
     document.querySelectorAll('.breadcrumb-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -558,15 +593,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Event listeners for sidebar links
     document.querySelectorAll('.quick-link').forEach(item => {
-            item.addEventListener('click', () => {
-                const path = item.dataset.path;
-                if (path) {
-                    navigateToPath(path);
-                }
-            });
+        item.addEventListener('click', () => {
+            const path = item.dataset.path;
+            if (path) {
+                navigateToPath(path);
+            }
         });
+    });
 
     document.querySelectorAll('.filter-item').forEach(item => {
         item.addEventListener('click', () => {
@@ -574,7 +608,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Header button event listeners
     const sidebarToggleBtn = document.getElementById('sidebarToggle');
     if (sidebarToggleBtn) {
         sidebarToggleBtn.addEventListener('click', toggleSidebar);
@@ -585,19 +618,21 @@ document.addEventListener('DOMContentLoaded', function() {
         newButton.addEventListener('click', showCreateModal);
     }
 
-    // Git import button event listener
     const importGitButton = document.getElementById('importGitButton');
     if (importGitButton) {
         importGitButton.addEventListener('click', showImportModal);
     }
     
-    // Modal button event listeners
+    const uploadButton = document.getElementById('uploadButton');
+    if(uploadButton) {
+        uploadButton.addEventListener('click', showUploadModal);
+    }
+    
     const closeCreateModalBtn = document.getElementById('closeCreateModal');
     if (closeCreateModalBtn) {
         closeCreateModalBtn.addEventListener('click', closeCreateModal);
     }
     
-    // Git import modal buttons
     const closeImportModalBtn = document.getElementById('closeImportModal');
     if(closeImportModalBtn) {
         closeImportModalBtn.addEventListener('click', closeImportModal);
@@ -609,6 +644,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const importRepoButton = document.getElementById('importRepoButton');
     if(importRepoButton) {
         importRepoButton.addEventListener('click', importFromGit);
+    }
+
+    const closeUploadModalBtn = document.getElementById('closeUploadModal');
+    if(closeUploadModalBtn) {
+        closeUploadModalBtn.addEventListener('click', closeUploadModal);
+    }
+    const cancelUploadButton = document.getElementById('cancelUploadButton');
+    if(cancelUploadButton) {
+        cancelUploadButton.addEventListener('click', closeUploadModal);
+    }
+    const uploadZipButton = document.getElementById('uploadZipButton');
+    if(uploadZipButton) {
+        uploadZipButton.addEventListener('click', uploadZip);
     }
 
 
@@ -632,7 +680,6 @@ document.addEventListener('DOMContentLoaded', function() {
         pasteButton.addEventListener('click', pasteContent);
     }
 
-    // Event listeners for newly added buttons
     const selectAllButton = document.getElementById('selectAllButton');
     if (selectAllButton) {
         selectAllButton.addEventListener('click', selectAll);
@@ -664,7 +711,6 @@ document.addEventListener('DOMContentLoaded', function() {
         createFolderButton.addEventListener('click', () => createItem('folder'));
     }
 
-    // Sidebar outside click to close
     document.addEventListener('click', function(event) {
         const sidebar = document.getElementById('sidebar');
         const sidebarToggleBtn = document.getElementById('sidebarToggle');
@@ -674,26 +720,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Sidebar close button event listener
     const closeSidebarButton = document.getElementById('closeSidebarButton');
     if (closeSidebarButton) {
         closeSidebarButton.addEventListener('click', toggleSidebar);
     }
     
-    // Update file count
     const fileCount = document.querySelectorAll('.file-item').length;
     const fileCountElement = document.getElementById('fileCount');
     if (fileCountElement) {
         fileCountElement.textContent = fileCount;
     }
     
-    // Update current path display
     const currentPathDisplay = document.getElementById('currentPathDisplay');
     if (currentPathDisplay) {
         currentPathDisplay.textContent = getBasePath();
     }
     
-    // Check for changes in the editor to enable/disable save button
     const codeEditor = document.getElementById('codeEditor');
     if (codeEditor) {
         codeEditor.addEventListener('input', () => {

@@ -113,6 +113,9 @@
                     <button class="btn-primary" id="importGitButton" aria-label="Import from Git">
                         <i class="bi bi-box-arrow-in-down"></i>
                     </button>
+                    <button class="btn-primary" id="uploadButton" aria-label="Upload Zip">
+                        <i class="bi bi-upload"></i>
+                    </button>
                 </div>
             </header>
 
@@ -191,7 +194,8 @@
                 </div>
             </div>
             
-            <%- include('partials/import-modal') %> <%- include('partials/editor') %>
+            <%- include('partials/import-modal') %>
+            <%- include('partials/upload-modal') %> <%- include('partials/editor') %>
             <%- include('partials/context-menu') %>
             <%- include('partials/rename-modal') %>
             <%- include('partials/delete-modal') %>
