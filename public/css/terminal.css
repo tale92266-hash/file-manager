@@ -1,21 +1,22 @@
-/* Terminal Modal Styles - Larger & Mobile Optimized */
+/* Neo-Glassmorphism Terminal Modal Styles - Larger & Mobile Optimized */
 #terminalModal .modal-content.full-screen.terminal-modal-content {
-    background: linear-gradient(135deg, #0f1419 0%, #1a1d23 50%, #2d3748 100%);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    box-shadow: 
-        0 25px 50px rgba(0, 0, 0, 0.6),
-        0 0 0 1px rgba(59, 130, 246, 0.1);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
     display: flex;
     flex-direction: column;
     animation: terminalSlideIn 0.5s ease-out;
-    height: 70vh; /* Height badha di - 45vh se 70vh */
-    max-height: 70vh;
-    width: 90vw; /* Width badha di - 85vw se 90vw */
-    max-width: 1400px; /* Max width badha di */
-    border-radius: 12px;
+    height: 100vh;
+    max-height: 100vh;
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
     overflow: hidden;
-    backdrop-filter: blur(10px);
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10000;
 }
 
 @keyframes terminalSlideIn {
@@ -34,14 +35,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.8rem 1.5rem; /* Padding badha di */
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    padding: 1rem 1.5rem;
+    background: rgba(0, 0, 0, 0.5);
     color: #fff;
     border-bottom: 2px solid #3b82f6;
     position: relative;
     z-index: 10;
     flex-shrink: 0;
-    height: 55px; /* Height badha di */
+    height: 60px; /* Increased height */
 }
 
 .terminal-title-section {
@@ -54,7 +55,7 @@
     align-items: center;
     gap: 0.6rem;
     font-weight: 700;
-    font-size: 1.1rem; /* Font size badha di */
+    font-size: 1.2rem;
     color: #e2e8f0;
     margin: 0;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -62,7 +63,7 @@
 
 .terminal-title i {
     color: #3b82f6;
-    font-size: 1rem;
+    font-size: 1.1rem;
     text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 
@@ -73,41 +74,42 @@
 }
 
 .terminal-actions .btn-icon {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: #e2e8f0;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    padding: 0.5rem 0.8rem; /* Padding badha di */
-    border-radius: 6px;
-    font-size: 0.85rem; /* Font size badha di */
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
     gap: 0.4rem;
     cursor: pointer;
     transition: all 0.3s ease;
     backdrop-filter: blur(5px);
+    box-shadow: var(--neumorphism-shadow);
 }
 
 .terminal-actions .btn-icon:hover {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.2) 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 15px rgba(255, 255, 255, 0.1);
 }
 
 .terminal-actions .btn-danger {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
-    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.4);
 }
 
 .terminal-actions .btn-danger:hover {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.2) 100%);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.5);
+    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.2);
 }
 
 /* Command Section */
 .terminal-command-section {
-    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    background: rgba(0, 0, 0, 0.7);
     border-bottom: 2px solid rgba(59, 130, 246, 0.2);
-    padding: 1rem 1.5rem; /* Padding badha di */
+    padding: 1rem 1.5rem;
     position: relative;
     z-index: 9;
     flex-shrink: 0;
@@ -118,21 +120,19 @@
     display: flex;
     align-items: center;
     width: 100%;
-    background: rgba(15, 20, 25, 0.5);
-    padding: 0.8rem 1rem; /* Padding badha di */
-    border-radius: 8px;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
     transition: all 0.3s ease;
-    height: 45px; /* Height badha di */
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    height: 50px;
+    box-shadow: var(--neumorphism-inset-shadow);
 }
 
 .terminal-input-container:focus-within {
     border-color: #3b82f6;
-    box-shadow: 
-        0 0 0 3px rgba(59, 130, 246, 0.2),
-        inset 0 2px 4px rgba(0, 0, 0, 0.2);
-    background: rgba(15, 20, 25, 0.7);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    background: rgba(255, 255, 255, 0.2);
 }
 
 /* Path Truncation for Prompt */
@@ -142,10 +142,10 @@
     margin-right: 0.6rem;
     user-select: none;
     white-space: nowrap;
-    font-size: 14px; /* Font size badha di */
+    font-size: 14px;
     text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    max-width: 200px; /* Max width for path truncation */
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -158,10 +158,9 @@
     outline: none;
     color: #e2e8f0;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    font-size: 16px; /* 16px se zyada hona chahiye zoom ko prevent karne ke liye */
+    font-size: 16px;
     font-weight: 500;
     min-width: 0;
-    /* iOS Zoom Prevention */
     -webkit-appearance: none;
     -webkit-text-size-adjust: 100%;
     transform: translateZ(0);
@@ -170,7 +169,7 @@
 .terminal-input::placeholder {
     color: #64748b;
     font-style: italic;
-    font-size: 15px; /* Placeholder bhi 16px ke paas */
+    font-size: 15px;
 }
 
 /* Output Body Section - Larger */
@@ -178,15 +177,15 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 1.2rem; /* Padding badha di */
+    padding: 1.2rem;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    font-size: 14px; /* Font size badha di */
+    font-size: 14px;
     color: #e2e8f0;
-    line-height: 1.5; /* Line height badha di */
+    line-height: 1.6;
     overflow: hidden;
     position: relative;
     min-height: 0;
-    background: rgba(15, 20, 25, 0.1);
+    background: rgba(0, 0, 0, 0.1);
 }
 
 .terminal-output {
@@ -195,31 +194,31 @@
     word-break: break-word;
     overflow-y: auto;
     margin: 0;
-    padding: 1rem; /* Padding badha di */
-    background: rgba(15, 20, 25, 0.3);
-    border-radius: 8px;
-    border: 1px solid rgba(59, 130, 246, 0.1);
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     min-height: 0;
     box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* Better Scrollbar */
 .terminal-output::-webkit-scrollbar {
-    width: 6px; /* Width badha di */
+    width: 8px;
 }
 
 .terminal-output::-webkit-scrollbar-track {
-    background: rgba(15, 20, 25, 0.5);
-    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
 }
 
 .terminal-output::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    border-radius: 3px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border-radius: 4px;
 }
 
 .terminal-output::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    background: linear-gradient(135deg, #2563eb, #1e40af);
 }
 
 /* Text Styles */
@@ -251,11 +250,11 @@
 }
 
 @keyframes pulse {
-    0%, 100% { 
+    0%, 100% {
         opacity: 1;
         text-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
     }
-    50% { 
+    50% {
         opacity: 0.6;
         text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
     }
@@ -264,93 +263,91 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
     #terminalModal .modal-content.full-screen.terminal-modal-content {
-        height: 80vh; /* Mobile par aur bada */
-        width: 95vw;
-        border-radius: 10px;
+        height: 100vh;
+        width: 100vw;
+        border-radius: 0;
     }
-    
+
     .terminal-header {
         padding: 0.6rem 1rem;
         height: 50px;
     }
-    
+
     .terminal-command-section {
         padding: 0.8rem 1rem;
     }
-    
+
     .terminal-body {
         padding: 1rem;
     }
-    
+
     .terminal-output {
         font-size: 13px;
         padding: 0.8rem;
     }
-    
-    /* Mobile Zoom Fix - Critical */
+
     .terminal-input {
-        font-size: 16px; /* iPhone zoom prevent karne ke liye minimum 16px */
+        font-size: 16px;
     }
-    
+
     .terminal-title {
         font-size: 1rem;
     }
-    
+
     .terminal-actions .btn-text {
         display: none;
     }
-    
+
     .terminal-actions .btn-icon {
         padding: 0.4rem 0.6rem;
         font-size: 0.8rem;
     }
-    
+
     .terminal-input-container {
         height: 42px;
         padding: 0.6rem 0.8rem;
     }
-    
+
     .terminal-prompt {
         font-size: 13px;
-        max-width: 150px; /* Mobile par path width kam */
+        max-width: 150px;
     }
 }
 
 @media (max-width: 480px) {
     #terminalModal .modal-content.full-screen.terminal-modal-content {
-        height: 85vh; /* Small mobile par maximum space */
+        height: 100vh;
     }
-    
+
     .terminal-output {
         font-size: 12px;
     }
-    
-    /* iPhone Zoom Fix */
+
     .terminal-input {
-        font-size: 16px; /* Bilkul 16px minimum */
+        font-size: 16px;
     }
-    
+
     .terminal-header {
         height: 45px;
     }
-    
+
     .terminal-input-container {
         height: 40px;
     }
-    
+
     .terminal-prompt {
         font-size: 12px;
-        max-width: 120px; /* Small mobile par aur kam */
+        max-width: 120px;
     }
 }
 
 /* iOS Safari Specific Fixes */
 @supports (-webkit-touch-callout: none) {
     .terminal-input {
-        font-size: 16px !important; /* iOS par force 16px */
+        font-size: 16px !important;
         -webkit-text-size-adjust: 100%;
         -webkit-appearance: none;
-        border-radius: 0; /* iOS ki default styling remove karne ke liye */
+        border-radius: 0;
     }
 }
 
@@ -361,6 +358,6 @@
 }
 
 .terminal-prompt.truncated {
-    direction: rtl; /* Right to left for showing last parts */
+    direction: rtl;
     text-align: left;
 }

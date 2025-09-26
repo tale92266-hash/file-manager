@@ -2,10 +2,10 @@ let currentPath = '/';
 let hideHidden = true;
 let selectedFilePath = '';
 let selectedFileName = '';
-let selectedFileType = ''; // New variable to store the type (file/folder)
-let originalContent = ''; // Variable to store original file content
-let activeContextMenu = null; // Track the currently active context menu
-let terminalWs; // WebSocket connection for the terminal
+let selectedFileType = '';
+let originalContent = '';
+let activeContextMenu = null;
+let terminalWs;
 
 // Helper function to get the base path from the URL
 function getBasePath() {
@@ -37,9 +37,9 @@ function filterFiles(type) {
         let shouldShow = true;
         
         if (type !== 'all' && type !== 'hidden') {
-            shouldShow = fileName.match(/\.(js|html|css|json|py|java|cpp|c|php|rb|go)$/);
+            shouldShow = fileName.match(/\.(js|html|css|json|py|java|cpp|c|php|rb|go|ts|jsx|tsx|yml|yaml|sql)$/);
             if (type === 'images') {
-                shouldShow = fileName.match(/\.(jpg|jpeg|png|gif|svg|bmp|webp)$/);
+                shouldShow = fileName.match(/\.(jpg|jpeg|png|gif|svg|bmp|webp|ico)$/);
             }
         }
         
@@ -59,8 +59,6 @@ function filterFiles(type) {
 
 // Context menu functions
 function showContextMenu(event, filePath, fileName) {
-    
-    // Close any existing context menu
     if (activeContextMenu) {
         hideContextMenu(activeContextMenu);
     }
@@ -74,7 +72,6 @@ function showContextMenu(event, filePath, fileName) {
     
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
-        // Get dimensions
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
         const menuWidth = contextMenu.offsetWidth;
@@ -82,16 +79,13 @@ function showContextMenu(event, filePath, fileName) {
         let leftPosition = event.pageX;
         let topPosition = event.pageY;
 
-        // Adjust left position
         if (leftPosition + menuWidth > windowWidth - 20) {
             leftPosition = windowWidth - menuWidth - 20;
         }
-        // Adjust top position
         if (topPosition + menuHeight > windowHeight - 20) {
             topPosition = windowHeight - menuHeight - 20;
         }
         
-        // Ensure menu is not off-screen to the left or top
         if (leftPosition < 20) {
             leftPosition = 20;
         }
@@ -102,10 +96,9 @@ function showContextMenu(event, filePath, fileName) {
         contextMenu.style.left = leftPosition + 'px';
         contextMenu.style.top = topPosition + 'px';
         contextMenu.classList.add('active');
-        activeContextMenu = contextMenu; // Set the currently active menu
+        activeContextMenu = contextMenu;
     }
     
-    // Hide menu when clicking elsewhere
     document.addEventListener('click', hideContextMenu, { once: true });
 }
 
@@ -113,7 +106,7 @@ function hideContextMenu() {
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
         contextMenu.classList.remove('active');
-        activeContextMenu = null; // Clear the active menu reference
+        activeContextMenu = null;
     }
 }
 
@@ -286,6 +279,9 @@ function openFileEditor(filePath, fileName) {
     codeEditor.readOnly = true;
     editorLineCount.textContent = 'Lines: 0';
 
+    // Call the function to adjust editor height as soon as it opens
+    adjustEditorHeightForKeyboard();
+
     fetch(`/file-content?path=${encodeURIComponent(filePath)}`)
         .then(response => response.json())
         .then(data => {
@@ -364,7 +360,7 @@ function clearEditor() {
 function pasteContent() {
     const codeEditor = document.getElementById('codeEditor');
     const saveButton = document.getElementById('saveFileButton');
-    codeEditor.focus(); // Paste ke liye focus zaroori hai
+    codeEditor.focus();
     try {
         const success = document.execCommand('paste');
         if (success) {
@@ -391,7 +387,6 @@ function cutContent() {
     const codeEditor = document.getElementById('codeEditor');
     const saveButton = document.getElementById('saveFileButton');
     
-    // Create a temporary textarea to perform the cut operation without affecting the main editor's selection/focus
     const tempTextarea = document.createElement('textarea');
     tempTextarea.value = codeEditor.value;
     tempTextarea.setAttribute('readonly', '');
@@ -405,7 +400,6 @@ function cutContent() {
     try {
         const success = document.execCommand('cut');
         if (success) {
-            // Manual cut operation on the main editor
             codeEditor.value = '';
             showNotification('Content cut to clipboard!', 'info');
             saveButton.disabled = codeEditor.value === originalContent;
@@ -462,7 +456,7 @@ function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'}"></i>
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
         <span>${message}</span>
     `;
     
@@ -475,17 +469,21 @@ function showNotification(message, type = 'info') {
                 top: 20px;
                 right: 20px;
                 padding: 1rem 1.5rem;
-                border-radius: 8px;
+                border-radius: 12px;
                 color: white;
                 display: flex;
                 align-items: center;
-                gap: 0.5rem;
+                gap: 0.75rem;
                 z-index: 10000;
                 animation: slideIn 0.3s ease;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 4px 30px rgba(0,0,0,0.1);
             }
-            .notification.success { background: #28a745; }
-            .notification.error { background: #dc3545; }
-            .notification.info { background: #17a2b8; }
+            .notification.success { background: rgba(40, 167, 69, 0.8); }
+            .notification.error { background: rgba(220, 53, 69, 0.8); }
+            .notification.info { background: rgba(23, 162, 184, 0.8); }
             @keyframes slideIn {
                 from { transform: translateX(100%); opacity: 0; }
                 to { transform: translateX(0); opacity: 1; }
@@ -520,7 +518,7 @@ function importFromGit() {
     }
     
     closeImportModal();
-    showNotification('Importing from Git... This may take a moment.', 'info');
+    showProcessingModal();
     
     const currentPath = getBasePath();
     
@@ -572,7 +570,7 @@ function uploadZip() {
     formData.append('currentPath', getBasePath());
     
     closeUploadModal();
-    showProcessingModal(); // Show processing modal during upload
+    showProcessingModal();
 
     try {
         fetch('/import-zip', {
@@ -629,7 +627,7 @@ function uploadMultipleFiles() {
     formData.append('currentPath', getBasePath());
     
     closeUploadFilesModal();
-    showProcessingModal(); // Show processing modal during upload
+    showProcessingModal();
 
     fetch('/upload-files', {
         method: 'POST',
@@ -692,7 +690,6 @@ function hideProcessingModal() {
     document.getElementById('processingModal').classList.remove('active');
 }
 
-
 // New show header actions modal
 function showHeaderActionsModal() {
     document.getElementById('headerActionsModal').classList.add('active');
@@ -742,7 +739,6 @@ function initializeTerminal() {
           outputText = '<span class="terminal-loading">Starting nodemon...</span>\n';
         }
 
-        // Append output to the terminal display
         terminalOutput.innerHTML += outputText.replace(/\n/g, '<br>').replace(/\r/g, '');
         terminalOutput.scrollTop = terminalOutput.scrollHeight;
     };
@@ -756,6 +752,27 @@ function initializeTerminal() {
         console.error('Terminal WebSocket error:', error);
         showNotification('Terminal connection error.', 'error');
     };
+}
+
+// Function to dynamically adjust editor height on mobile to prevent keyboard overlap
+function adjustEditorHeightForKeyboard() {
+    if (window.innerWidth <= 768) {
+        const editor = document.getElementById('codeEditor');
+        const headerHeight = document.querySelector('.editor-header').offsetHeight;
+        const footerHeight = document.querySelector('.editor-footer').offsetHeight;
+        const totalNonContentHeight = headerHeight + footerHeight;
+        
+        // Thoda extra space
+        const extraSpace = 10; // Value has been slightly reduced
+        const newHeight = window.innerHeight - totalNonContentHeight - extraSpace;
+        
+        editor.style.height = `${newHeight}px`;
+        editor.style.maxHeight = `${newHeight}px`;
+    } else {
+        const editor = document.getElementById('codeEditor');
+        editor.style.height = ''; 
+        editor.style.maxHeight = ''; 
+    }
 }
 
 
@@ -773,6 +790,15 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 openFileEditor(path, item.querySelector('.file-name').textContent);
             }
+        });
+        // Add hover effect
+        item.addEventListener('mouseenter', () => {
+            item.style.transform = 'translateY(-5px) scale(1.02)';
+            item.style.boxShadow = '8px 8px 16px rgba(0, 0, 0, 0.1), -8px -8px 16px rgba(255, 255, 255, 0.5)';
+        });
+        item.addEventListener('mouseleave', () => {
+            item.style.transform = '';
+            item.style.boxShadow = 'var(--neumorphism-shadow)';
         });
     });
 
@@ -813,11 +839,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 navigateToPath(path);
             }
         });
+        // Add hover effects
+        item.addEventListener('mouseenter', () => {
+            item.style.transform = 'scale(1.05)';
+        });
+        item.addEventListener('mouseleave', () => {
+            item.style.transform = '';
+        });
     });
 
     document.querySelectorAll('.filter-item').forEach(item => {
         item.addEventListener('click', () => {
             filterFiles(item.dataset.filter);
+        });
+        // Add hover effects
+        item.addEventListener('mouseenter', () => {
+            item.style.transform = 'translateX(6px)';
+        });
+        item.addEventListener('mouseleave', () => {
+            item.style.transform = '';
         });
     });
     
@@ -838,7 +878,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const importGitButton = document.getElementById('importGitButton');
     if (importGitButton) {
-        importGitButton.addEventListener('click', showImportModal); // Yahan fix kiya gaya hai
+        importGitButton.addEventListener('click', showImportModal);
     }
     
     const uploadButton = document.getElementById('uploadButton');
@@ -935,7 +975,6 @@ document.addEventListener('DOMContentLoaded', function() {
         cutButton.addEventListener('click', cutContent);
     }
 
-
     const cancelButton = document.getElementById('cancelButton');
     if (cancelButton) {
         cancelButton.addEventListener('click', closeFileEditor);
@@ -957,7 +996,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // New Terminal Button logic
     const openTerminalButton = document.getElementById('openTerminalButton');
     if (openTerminalButton) {
         openTerminalButton.addEventListener('click', showTerminalModal);
@@ -1050,4 +1088,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // New resize event listener
+    window.addEventListener('resize', adjustEditorHeightForKeyboard);
 });

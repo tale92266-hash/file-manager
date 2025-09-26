@@ -3,11 +3,9 @@
         <div class="header-left">
             <h1 class="app-title">
                 <i class="fas fa-terminal"></i>
-                
             </h1>
         </div>
         <div class="header-right">
-         
             <button onclick="showCreateModal()" class="btn-primary">
                 <i class="fas fa-plus"></i>
                 <span class="btn-text">New</span>
@@ -19,23 +17,19 @@
 <div id="createModal" class="modal">
     <div class="modal-content small">
         <div class="modal-header">
-           
             <h3>Create New</h3>
             <button onclick="closeCreateModal()" class="btn-close">
                 <i class="fas fa-times"></i>
-          
             </button>
         </div>
         <div class="modal-body">
-            <input type="text" id="newItemName" placeholder="Enter name..." class="input-field">
-          
+            <input type="text" id="newItemName" 
+            placeholder="Enter name..." class="input-field">
             <div class="button-group">
                 <button onclick="createItem('file')" class="btn-primary">
                     <i class="fas fa-file"></i> File
-          
                 </button>
                 <button onclick="createItem('folder')" class="btn-secondary">
-            
                     <i class="fas fa-folder"></i> Folder
                 </button>
             </div>
