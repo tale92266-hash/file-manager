@@ -111,17 +111,8 @@
     <button class="btn-primary" id="newButton" aria-label="New">
                         <i class="bi bi-plus-lg"></i>
                     </button>
-                    <button class="btn-primary" id="importGitButton" aria-label="Import from Git">
-                        <i class="bi bi-box-arrow-in-down"></i>
-                    </button>
-                    <button class="btn-primary" id="uploadButton" aria-label="Upload Zip">
-                        <i class="bi bi-upload"></i>
-                    </button>
-                    <button class="btn-primary" id="uploadFilesBtn" aria-label="Upload Files">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </button>
-                    <button class="btn-primary" id="exportButton" aria-label="Export to Zip">
-                        <i class="fas fa-file-export"></i>
+                    <button class="btn-primary" id="showActionsBtn" aria-label="Tools">
+                        <i class="fas fa-tools"></i>
                     </button>
                 </div>
             </header>
@@ -205,6 +196,7 @@
             <%- include('partials/upload-modal') %>
             <%- include('partials/upload-files-modal') %>
             <%- include('partials/processing-modal') %>
+            <%- include('partials/header-actions-modal') %>
             <%- include('partials/editor') %>
             <%- include('partials/context-menu') %>
             <%- include('partials/rename-modal') %>
