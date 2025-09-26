@@ -256,6 +256,19 @@ body {
     justify-content: center;
 }
 
+/* Naya style header actions modal ke liye */
+.button-group-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.button-group-vertical .btn-primary {
+    justify-content: flex-start;
+    width: 100%;
+}
+
+
 .btn-close {
     background: transparent;
     border: none;
