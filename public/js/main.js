@@ -457,6 +457,51 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// New Git Import functions
+function showImportModal() {
+    document.getElementById('importModal').classList.add('active');
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.remove('active');
+    document.getElementById('repoUrlInput').value = '';
+}
+
+function importFromGit() {
+    const repoUrl = document.getElementById('repoUrlInput').value.trim();
+    if (!repoUrl) {
+        showNotification('Please enter a valid GitHub repository URL.', 'error');
+        return;
+    }
+    
+    closeImportModal();
+    showNotification('Importing from Git... This may take a moment.', 'info');
+    
+    const currentPath = getBasePath();
+    
+    fetch('/import-git', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            repoUrl: repoUrl,
+            currentPath: currentPath
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            showNotification('Error importing from Git: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error: ' + error.message, 'error');
+    });
+}
+
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     // Event listeners for file items
@@ -539,6 +584,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (newButton) {
         newButton.addEventListener('click', showCreateModal);
     }
+
+    // Git import button event listener
+    const importGitButton = document.getElementById('importGitButton');
+    if (importGitButton) {
+        importGitButton.addEventListener('click', showImportModal);
+    }
     
     // Modal button event listeners
     const closeCreateModalBtn = document.getElementById('closeCreateModal');
@@ -546,6 +597,20 @@ document.addEventListener('DOMContentLoaded', function() {
         closeCreateModalBtn.addEventListener('click', closeCreateModal);
     }
     
+    // Git import modal buttons
+    const closeImportModalBtn = document.getElementById('closeImportModal');
+    if(closeImportModalBtn) {
+        closeImportModalBtn.addEventListener('click', closeImportModal);
+    }
+    const cancelImportButton = document.getElementById('cancelImportButton');
+    if(cancelImportButton) {
+        cancelImportButton.addEventListener('click', closeImportModal);
+    }
+    const importRepoButton = document.getElementById('importRepoButton');
+    if(importRepoButton) {
+        importRepoButton.addEventListener('click', importFromGit);
+    }
+
 
     const saveFileButton = document.getElementById('saveFileButton');
     if (saveFileButton) {

@@ -3,6 +3,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const mime = require('mime-types');
 const { parseGitignore } = require('parse-gitignore-ts');
+const simpleGit = require('simple-git'); // <-- Yeh line add karein
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -203,6 +204,34 @@ app.get('/download-folder', (req, res) => {
     archive.pipe(res);
     archive.directory(folderPath, false); // false means don't include the folder's base directory in the zip
     archive.finalize();
+});
+
+// New route to import from Git
+app.post('/import-git', async (req, res) => {
+  try {
+    const { repoUrl, currentPath } = req.body;
+    if (!repoUrl) {
+      return res.status(400).json({ success: false, error: 'GitHub repository URL is required.' });
+    }
+
+    // Git repo URL se repo name extract karein
+    const repoName = path.basename(repoUrl, path.extname(repoUrl));
+    const targetPath = path.join(currentPath, repoName);
+
+    // Agar directory pehle se maujood hai to use remove karein
+    if (await fs.pathExists(targetPath)) {
+      await fs.remove(targetPath);
+    }
+    
+    // Repository clone karein
+    await simpleGit().clone(repoUrl, targetPath);
+
+    res.json({ success: true, message: `Repository '${repoName}' cloned successfully!` });
+
+  } catch (error) {
+    console.error('Git import error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 
