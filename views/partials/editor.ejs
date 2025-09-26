@@ -1,8 +1,12 @@
 <div id="editorModal" class="modal">
     <div class="modal-content full-screen">
         <div class="editor-header">
-            <h3 class="editor-title" id="editorTitle"></h3>
+            <div class="editor-title-container">
+                <h3 class="editor-title" id="editorTitle"></h3>
+                <span id="unsavedChangesStar" class="unsaved-changes-star">*</span>
+            </div>
             <div class="header-actions">
+                <span id="editorLineCount" class="editor-info">Lines: 0</span>
                 <button id="saveFileButton" class="btn-icon btn-save" aria-label="Save">
                     <i class="fas fa-save"></i>
                 </button>

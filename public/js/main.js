@@ -273,14 +273,18 @@ function openFileEditor(filePath, fileName) {
     const editorTitle = document.getElementById('editorTitle');
     const codeEditor = document.getElementById('codeEditor');
     const saveButton = document.getElementById('saveFileButton');
+    const editorLineCount = document.getElementById('editorLineCount');
+    const unsavedChangesStar = document.getElementById('unsavedChangesStar');
 
     selectedFilePath = filePath;
     editorTitle.textContent = fileName;
     editorModal.classList.add('active');
+    unsavedChangesStar.style.display = 'none';
 
     codeEditor.value = '';
     codeEditor.classList.add('loading');
     codeEditor.readOnly = true;
+    editorLineCount.textContent = 'Lines: 0';
 
     fetch(`/file-content?path=${encodeURIComponent(filePath)}`)
         .then(response => response.json())
@@ -292,9 +296,11 @@ function openFileEditor(filePath, fileName) {
                 if (data.content.trim() === '') {
                     codeEditor.value = 'This file is empty. You can start typing to add content.';
                     originalContent = '';
+                    editorLineCount.textContent = 'Lines: 1';
                 } else {
                     codeEditor.value = data.content;
                     originalContent = data.content;
+                    editorLineCount.textContent = `Lines: ${data.content.split('\n').length}`;
                 }
                 saveButton.disabled = true;
             } else {
@@ -335,6 +341,7 @@ function saveFile() {
             showNotification('File saved successfully!', 'success');
             originalContent = content;
             document.getElementById('saveFileButton').disabled = true;
+            document.getElementById('unsavedChangesStar').style.display = 'none';
             closeFileEditor();
         } else {
             showNotification('Error saving file: ' + data.error, 'error');
@@ -351,6 +358,7 @@ function clearEditor() {
     codeEditor.value = '';
     const saveButton = document.getElementById('saveFileButton');
     saveButton.disabled = codeEditor.value === originalContent;
+    document.getElementById('unsavedChangesStar').style.display = 'none';
 }
 
 function pasteContent() {
@@ -360,6 +368,9 @@ function pasteContent() {
         showNotification('Pasted content from clipboard!', 'info');
         const saveButton = document.getElementById('saveFileButton');
         saveButton.disabled = codeEditor.value === originalContent;
+        if (codeEditor.value !== originalContent) {
+            document.getElementById('unsavedChangesStar').style.display = 'inline';
+        }
     }).catch(err => {
         showNotification('Failed to read clipboard content.', 'error');
     });
@@ -379,6 +390,9 @@ function cutContent() {
         showNotification('Content cut to clipboard!', 'info');
         const saveButton = document.getElementById('saveFileButton');
         saveButton.disabled = codeEditor.value === originalContent;
+        if (codeEditor.value !== originalContent) {
+            document.getElementById('unsavedChangesStar').style.display = 'inline';
+        }
     })
     .catch(err => {
         showNotification('Failed to cut content.', 'error');
@@ -1015,6 +1029,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveButton.disabled = false;
             } else {
                 saveButton.disabled = true;
+            }
+            const editorLineCount = document.getElementById('editorLineCount');
+            const lineCount = codeEditor.value.split('\n').length;
+            editorLineCount.textContent = `Lines: ${lineCount}`;
+
+            const unsavedChangesStar = document.getElementById('unsavedChangesStar');
+            if (codeEditor.value === originalContent) {
+                unsavedChangesStar.style.display = 'none';
+            } else {
+                unsavedChangesStar.style.display = 'inline';
             }
         });
     }

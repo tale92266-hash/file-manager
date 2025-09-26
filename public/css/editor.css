@@ -1,3 +1,4 @@
+/* Fixed Full Screen Editor with Proper Button Visibility */
 
 .modal {
     display: none;
@@ -69,6 +70,12 @@
     z-index: 10001;
 }
 
+.editor-title-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .editor-title {
     display: flex;
     align-items: center;
@@ -89,6 +96,30 @@
 @keyframes pulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
+}
+
+.unsaved-changes-star {
+    font-size: 1.5rem;
+    color: #f1c40f;
+    font-weight: 700;
+    line-height: 1;
+    display: none;
+    animation: pulse-star 1s infinite;
+}
+
+@keyframes pulse-star {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.editor-info {
+    font-size: 0.9rem;
+    color: #ddd;
+    margin-left: auto;
+    margin-right: 2rem;
+    padding: 0.2rem 0.6rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
 }
 
 .header-actions {
@@ -327,11 +358,20 @@
         min-height: 55px;
         max-height: 55px;
     }
+
+    .editor-title-container {
+        flex-grow: 1;
+        justify-content: center;
+    }
     
     .editor-title {
         font-size: 1rem;
     }
     
+    .header-actions {
+        margin-left: auto;
+    }
+
     .header-actions .btn-icon {
         width: 35px;
         height: 35px;
