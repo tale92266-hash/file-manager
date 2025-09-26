@@ -12,19 +12,6 @@
                 <i class="fas fa-plus"></i>
                 <span class="btn-text">New</span>
             </button>
-            <button onclick="showUploadModal()" class="btn-secondary">
-                <i class="fas fa-upload"></i>
-                
-                <span class="btn-text">Upload</span>
-            </button>
-            <button onclick="showImportModal()" class="btn-secondary">
-                <i class="fas fa-file-import"></i>
-                <span class="btn-text">Import</span>
-            </button>
-            <button onclick="exportProject()" class="btn-secondary">
-                <i class="fas fa-file-export"></i>
-                <span class="btn-text">Export</span>
-            </button>
         </div>
     </div>
 </header>
@@ -32,6 +19,7 @@
 <div id="createModal" class="modal">
     <div class="modal-content small">
         <div class="modal-header">
+           
             <h3>Create New</h3>
             <button onclick="closeCreateModal()" class="btn-close">
                 <i class="fas fa-times"></i>
@@ -40,34 +28,17 @@
         </div>
         <div class="modal-body">
             <input type="text" id="newItemName" placeholder="Enter name..." class="input-field">
+          
             <div class="button-group">
                 <button onclick="createItem('file')" class="btn-primary">
                     <i class="fas fa-file"></i> File
           
                 </button>
                 <button onclick="createItem('folder')" class="btn-secondary">
+            
                     <i class="fas fa-folder"></i> Folder
                 </button>
             </div>
-        </div>
-    </div>
-</div>
-
-<div id="uploadModal" class="modal">
-    <div class="modal-content small">
-  
-        <div class="modal-header">
-            <h3>Upload File</h3>
-            <button onclick="closeUploadModal()" class="btn-close">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <input type="file" id="fileInput" class="file-input" multiple>
-   
-            <button onclick="uploadFiles()" class="btn-primary full-width">
-                <i class="fas fa-upload"></i> Upload Selected Files
-            </button>
         </div>
     </div>
 </div>

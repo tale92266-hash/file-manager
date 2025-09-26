@@ -4,7 +4,6 @@ let selectedFilePath = '';
 let selectedFileName = '';
 let selectedFileType = ''; // New variable to store the type (file/folder)
 let originalContent = ''; // Variable to store original file content
-let isProcessRunning = false; // Consolidated flag for any ongoing process (export/import)
 let activeContextMenu = null; // Track the currently active context menu
 
 // Helper function to get the base path from the URL
@@ -15,10 +14,6 @@ function getBasePath() {
 
 // Navigation functions
 function navigateToPath(path) {
-    if (isProcessRunning) {
-        showNotification('An operation is running. Please wait for it to complete.', 'error');
-        return;
-    }
     window.location.href = `/?path=${encodeURIComponent(path)}`;
 }
 
@@ -63,10 +58,6 @@ function filterFiles(type) {
 
 // Context menu functions
 function showContextMenu(event, filePath, fileName) {
-    if (isProcessRunning) {
-        showNotification('An operation is running. Actions are disabled.', 'error');
-        return;
-    }
     
     // Close any existing context menu
     if (activeContextMenu) {
@@ -228,10 +219,6 @@ function downloadFile() {
 
 // Create modal functions
 function showCreateModal() {
-    if (isProcessRunning) {
-        showNotification('An operation is running. Actions are disabled.', 'error');
-        return;
-    }
     document.getElementById('createModal').classList.add('active');
 }
 
@@ -281,64 +268,8 @@ function createItem(type) {
     });
 }
 
-// Upload modal functions
-function showUploadModal() {
-    if (isProcessRunning) {
-        showNotification('An operation is running. Actions are disabled.', 'error');
-        return;
-    }
-    document.getElementById('uploadModal').classList.add('active');
-    document.getElementById('fileInput').value = ''; // Reset file input
-    document.getElementById('fileLabel').textContent = 'Choose File(s)...'; // Reset label
-    document.getElementById('dropZoneUpload').classList.remove('active'); // Remove active class on open
-}
-
-function closeUploadModal() {
-    document.getElementById('uploadModal').classList.remove('active');
-}
-
-function uploadFiles() {
-    const fileInput = document.getElementById('fileInput');
-    const files = fileInput.files;
-    
-    if (files.length === 0) {
-        showNotification('Please select files to upload', 'error');
-        return;
-    }
-    
-    const currentPath = getBasePath();
-    const formData = new FormData();
-    
-    for (let file of files) {
-        formData.append('files', file);
-    }
-    formData.append('currentPath', currentPath);
-    
-    fetch('/upload', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Files uploaded successfully!', 'success');
-            closeUploadModal();
-            setTimeout(() => window.location.reload(), 1000);
-        } else {
-            showNotification('Error uploading files: ' + data.error, 'error');
-        }
-    })
-    .catch(error => {
-        showNotification('Error: ' + error.message, 'error');
-    });
-}
-
 // Editor modal functions
 function openFileEditor(filePath, fileName) {
-    if (isProcessRunning) {
-        showNotification('An operation is running. Actions are disabled.', 'error');
-        return;
-    }
     const editorModal = document.getElementById('editorModal');
     const editorTitle = document.getElementById('editorTitle');
     const codeEditor = document.getElementById('codeEditor');
@@ -480,129 +411,6 @@ function cancelEdit() {
     showNotification('Changes cancelled!', 'info');
 }
 
-// New Export Project function
-function exportProject() {
-    const currentPath = getBasePath();
-    const exportModal = document.getElementById('exportModal');
-    const exportStatusMessage = document.getElementById('exportStatusMessage');
-    
-    // Set exporting flag to true and show modal
-    isProcessRunning = true;
-    exportModal.classList.add('active');
-    exportStatusMessage.textContent = 'Preparing files for export...';
-
-    // Disable all UI elements
-    const disableElements = document.querySelectorAll('.main-container button, .file-item, .quick-link, .filter-item, .sidebar-toggle');
-    disableElements.forEach(el => el.style.pointerEvents = 'none');
-
-    fetch(`/export?path=${encodeURIComponent(currentPath)}`)
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => { throw new Error(text) });
-            }
-            // Start the download
-            const disposition = response.headers.get('content-disposition');
-            const fileNameMatch = disposition && disposition.match(/filename="(.+)"/);
-            const fileName = fileNameMatch ? fileNameMatch[1] : 'project-export.zip';
-            
-            return response.blob().then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-            });
-        })
-        .then(() => {
-            showNotification('Project exported successfully!', 'success');
-        })
-        .catch(error => {
-            showNotification('Error exporting project: ' + error.message, 'error');
-        })
-        .finally(() => {
-            // Reset exporting flag and hide modal
-            isProcessRunning = false;
-            exportModal.classList.remove('active');
-            
-            // Re-enable all UI elements
-            const enableElements = document.querySelectorAll('.main-container button, .file-item, .quick-link, .filter-item, .sidebar-toggle');
-            enableElements.forEach(el => el.style.pointerEvents = 'auto');
-        });
-}
-
-// New Import Project functions
-function showImportModal() {
-    if (isProcessRunning) {
-        showNotification('An operation is running. Actions are disabled.', 'error');
-        return;
-    }
-    document.getElementById('importModal').classList.add('active');
-    document.getElementById('importLoadingState').style.display = 'none';
-    document.getElementById('uploadZipButton').style.display = 'block';
-    document.getElementById('zipFileInput').value = '';
-    document.getElementById('zipFileLabel').textContent = 'Choose File...'; // Reset label text
-    document.getElementById('dropZone').classList.remove('active'); // Remove active class on open
-}
-
-function closeImportModal() {
-    document.getElementById('importModal').classList.remove('active');
-}
-
-function importProject() {
-    const zipFileInput = document.getElementById('zipFileInput');
-    const zipFile = zipFileInput.files[0];
-
-    if (!zipFile) {
-        showNotification('Please select a zip file to import', 'error');
-        return;
-    }
-    
-    // Hide upload button and show loading state
-    document.getElementById('uploadZipButton').style.display = 'none';
-    document.getElementById('importLoadingState').style.display = 'flex';
-    document.getElementById('importStatusMessage').textContent = 'Importing project...';
-
-    const currentPath = getBasePath();
-    const formData = new FormData();
-    formData.append('zipFile', zipFile);
-    formData.append('currentPath', currentPath);
-
-    // Set process running flag
-    isProcessRunning = true;
-    const disableElements = document.querySelectorAll('.main-container button, .file-item, .quick-link, .filter-item, .sidebar-toggle');
-    disableElements.forEach(el => el.style.pointerEvents = 'none');
-    
-    fetch('/import', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Project imported successfully! Refreshing...', 'success');
-            setTimeout(() => window.location.reload(), 1500);
-        } else {
-            showNotification('Error importing project: ' + data.error, 'error');
-            document.getElementById('importLoadingState').style.display = 'none';
-            document.getElementById('uploadZipButton').style.display = 'block';
-        }
-    })
-    .catch(error => {
-        showNotification('Error: ' + error.message, 'error');
-        document.getElementById('importLoadingState').style.display = 'none';
-        document.getElementById('uploadZipButton').style.display = 'block';
-    })
-    .finally(() => {
-        // Reset process running flag and re-enable UI elements
-        isProcessRunning = false;
-        const enableElements = document.querySelectorAll('.main-container button, .file-item, .quick-link, .filter-item, .sidebar-toggle');
-        enableElements.forEach(el => el.style.pointerEvents = 'auto');
-    });
-}
-
 
 // Notification system
 function showNotification(message, type = 'info') {
@@ -732,21 +540,12 @@ document.addEventListener('DOMContentLoaded', function() {
         newButton.addEventListener('click', showCreateModal);
     }
     
-    const uploadButton = document.getElementById('uploadButton');
-    if (uploadButton) {
-        uploadButton.addEventListener('click', showUploadModal);
-    }
-    
     // Modal button event listeners
     const closeCreateModalBtn = document.getElementById('closeCreateModal');
     if (closeCreateModalBtn) {
         closeCreateModalBtn.addEventListener('click', closeCreateModal);
     }
     
-    const closeUploadModalBtn = document.getElementById('closeUploadModal');
-    if (closeUploadModalBtn) {
-        closeUploadModalBtn.addEventListener('click', closeUploadModal);
-    }
 
     const saveFileButton = document.getElementById('saveFileButton');
     if (saveFileButton) {
@@ -800,11 +599,6 @@ document.addEventListener('DOMContentLoaded', function() {
         createFolderButton.addEventListener('click', () => createItem('folder'));
     }
 
-    const uploadFilesButton = document.getElementById('uploadFilesButton');
-    if (uploadFilesButton) {
-        uploadFilesButton.addEventListener('click', uploadFiles);
-    }
-
     // Sidebar outside click to close
     document.addEventListener('click', function(event) {
         const sidebar = document.getElementById('sidebar');
@@ -820,47 +614,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closeSidebarButton) {
         closeSidebarButton.addEventListener('click', toggleSidebar);
     }
-
-    // New export button event listener
-    const exportButton = document.getElementById('exportButton');
-    if (exportButton) {
-        exportButton.addEventListener('click', exportProject);
-    }
-
-    // Close export modal button
-    const closeExportModalBtn = document.getElementById('closeExportModal');
-    if (closeExportModalBtn) {
-        closeExportModalBtn.addEventListener('click', () => {
-            if (isProcessRunning) {
-                showNotification('An operation is in progress and cannot be cancelled.', 'error');
-            } else {
-                document.getElementById('exportModal').classList.remove('active');
-            }
-        });
-    }
-
-    // New import button event listener
-    const importButton = document.getElementById('importButton');
-    if (importButton) {
-        importButton.addEventListener('click', showImportModal);
-    }
     
-    const uploadZipButton = document.getElementById('uploadZipButton');
-    if (uploadZipButton) {
-        uploadZipButton.addEventListener('click', importProject);
-    }
-
-    const closeImportModalBtn = document.getElementById('closeImportModal');
-    if (closeImportModalBtn) {
-        closeImportModalBtn.addEventListener('click', () => {
-            if (isProcessRunning) {
-                showNotification('An operation is in progress and cannot be cancelled.', 'error');
-            } else {
-                document.getElementById('importModal').classList.remove('active');
-            }
-        });
-    }
-
     // Update file count
     const fileCount = document.querySelectorAll('.file-item').length;
     const fileCountElement = document.getElementById('fileCount');
@@ -883,84 +637,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveButton.disabled = false;
             } else {
                 saveButton.disabled = true;
-            }
-        });
-    }
-
-    // Handle file name display for import modal
-    const zipFileInput = document.getElementById('zipFileInput');
-    if (zipFileInput) {
-        zipFileInput.addEventListener('change', () => {
-            const fileNameDisplay = document.getElementById('zipFileLabel');
-            if (zipFileInput.files.length > 0) {
-                fileNameDisplay.textContent = zipFileInput.files[0].name;
-            } else {
-                fileNameDisplay.textContent = 'Choose File...';
-            }
-        });
-        
-        const dropZone = document.getElementById('dropZone');
-        
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('active');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('active');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('active');
-            
-            const files = e.dataTransfer.files;
-            zipFileInput.files = files; // Assign the dropped files to the input element
-            
-            const fileNameDisplay = document.getElementById('zipFileLabel');
-            if (zipFileInput.files.length > 0) {
-                fileNameDisplay.textContent = zipFileInput.files[0].name;
-            } else {
-                fileNameDisplay.textContent = 'Choose File...';
-            }
-        });
-    }
-    
-    // Handle file name display for upload modal
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
-        fileInput.addEventListener('change', () => {
-            const fileNameDisplay = document.getElementById('fileLabel');
-            if (fileInput.files.length > 0) {
-                fileNameDisplay.textContent = `${fileInput.files.length} file(s) selected`;
-            } else {
-                fileNameDisplay.textContent = 'Choose File(s)...';
-            }
-        });
-        
-        const dropZoneUpload = document.getElementById('dropZoneUpload');
-        
-        dropZoneUpload.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZoneUpload.classList.add('active');
-        });
-
-        dropZoneUpload.addEventListener('dragleave', () => {
-            dropZoneUpload.classList.remove('active');
-        });
-
-        dropZoneUpload.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZoneUpload.classList.remove('active');
-            
-            const files = e.dataTransfer.files;
-            fileInput.files = files;
-            
-            const fileNameDisplay = document.getElementById('fileLabel');
-            if (fileInput.files.length > 0) {
-                fileNameDisplay.textContent = `${fileInput.files.length} file(s) selected`;
-            } else {
-                fileNameDisplay.textContent = 'Choose File(s)...';
             }
         });
     }

@@ -1,27 +1,11 @@
 const express = require('express');
 const fs = require('fs-extra');
 const path = require('path');
-const multer = require('multer');
 const mime = require('mime-types');
-const archiver = require('archiver');
 const { parseGitignore } = require('parse-gitignore-ts');
-const AdmZip = require('adm-zip');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = req.body.currentPath || './';
-    cb(null, uploadPath);
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  }
-});
-
-const upload = multer({ storage: storage });
 
 // Middleware
 app.use(express.json());
@@ -185,94 +169,6 @@ app.post('/rename', async (req, res) => {
   }
 });
 
-// Upload file
-app.post('/upload', upload.single('file'), (req, res) => {
-  try {
-    res.json({ success: true, message: 'File uploaded successfully!' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// New Export Route
-app.get('/export', async (req, res) => {
-  const currentPath = req.query.path || process.cwd();
-  const projectName = path.basename(currentPath) || 'project-export';
-  const output = archiver('zip', {
-    zlib: { level: 9 }
-  });
-
-  res.attachment(`${projectName}.zip`);
-
-  output.pipe(res);
-
-  try {
-    const gitignorePath = path.join(currentPath, '.gitignore');
-    const ignoreList = ['node_modules'];
-    
-    if (fs.existsSync(gitignorePath)) {
-      const gitignoreContent = await fs.readFile(gitignorePath, 'utf8');
-      const parsedIgnore = parseGitignore(gitignoreContent);
-      ignoreList.push(...parsedIgnore);
-    }
-
-    const files = await fs.readdir(currentPath);
-
-    for (const file of files) {
-      const filePath = path.join(currentPath, file);
-      
-      // Check if the file/folder should be ignored
-      const shouldIgnore = ignoreList.some(ignorePattern => {
-        // Normalize for consistent comparison
-        const normalizedFile = path.normalize(file);
-        const normalizedPattern = path.normalize(ignorePattern);
-        
-        // Use `startsWith` for directory patterns and exact match for files
-        return normalizedFile === normalizedPattern || normalizedFile.startsWith(normalizedPattern + path.sep);
-      });
-
-      if (!shouldIgnore) {
-        const stats = await fs.stat(filePath);
-        if (stats.isDirectory()) {
-          output.directory(filePath, file);
-        } else {
-          output.file(filePath, { name: file });
-        }
-      }
-    }
-    
-    // Finalize the archive after all files/folders have been appended
-    output.finalize();
-
-  } catch (error) {
-    console.error(`Error during project export: ${error.message}`);
-    res.status(500).send(`Error exporting project: ${error.message}`);
-  }
-});
-
-// New Import Route
-app.post('/import', upload.single('zipFile'), async (req, res) => {
-    try {
-        const zipFilePath = req.file.path;
-        const currentPath = req.body.currentPath;
-
-        if (!zipFilePath || !currentPath) {
-            return res.status(400).json({ error: 'Zip file or current path is missing.' });
-        }
-
-        const zip = new AdmZip(zipFilePath);
-        zip.extractAllTo(currentPath, true); // `true` for overwrite
-
-        // Clean up the uploaded zip file
-        await fs.remove(zipFilePath);
-
-        res.json({ success: true, message: 'Project imported successfully!' });
-    } catch (error) {
-        res.status(500).json({ error: `Error importing project: ${error.message}` });
-    }
-});
-
-
 // New Download file route
 app.get('/download', (req, res) => {
   const filePath = req.query.path;
@@ -292,7 +188,7 @@ app.get('/download', (req, res) => {
 app.get('/download-folder', (req, res) => {
     const folderPath = req.query.path;
     const folderName = path.basename(folderPath);
-
+    const archiver = require('archiver');
     const archive = archiver('zip', {
         zlib: { level: 9 }
     });
