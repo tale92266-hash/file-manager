@@ -209,15 +209,14 @@ app.get('/download-folder', (req, res) => {
     archive.finalize();
 });
 
-// Git import ka naya implementation
 app.post('/import-git', async (req, res) => {
   try {
     let { repoUrl, currentPath } = req.body;
+    console.log('Import from Git request received.');
     if (!repoUrl) {
       return res.status(400).json({ success: false, error: 'GitHub repository URL is required.' });
     }
 
-    // .git ko URL se hata dein agar maujood hai
     if (repoUrl.endsWith('.git')) {
         repoUrl = repoUrl.slice(0, -4);
     }
@@ -227,12 +226,12 @@ app.post('/import-git', async (req, res) => {
     let zipUrl = '';
     let response;
 
-    // Branches ko try karein
     for (const branch of branchesToTry) {
         zipUrl = `${repoUrl}/archive/refs/heads/${branch}.zip`;
+        console.log(`Attempting to download zip from: ${zipUrl}`);
         response = await fetch(zipUrl);
         if (response.ok) {
-            break; // Agar download success ho gaya to loop se bahar aa jayen
+            break;
         }
     }
 
@@ -243,36 +242,37 @@ app.post('/import-git', async (req, res) => {
     const tempDirPrefix = 'git-zip-';
     const tempDirPath = await fs.mkdtemp(path.join(os.tmpdir(), tempDirPrefix));
     const zipFilePath = path.join(tempDirPath, `${repoName}.zip`);
+    console.log(`Downloading zip to: ${zipFilePath}`);
 
-    // Download the zip file
     const fileStream = fs.createWriteStream(zipFilePath);
     await new Promise((resolve, reject) => {
       response.body.pipe(fileStream);
       response.body.on("error", reject);
       fileStream.on("finish", resolve);
     });
+    console.log('Zip file downloaded successfully.');
 
-    // Extract the zip file
     const zip = new AdmZip(zipFilePath);
     const tempExtractionPath = path.join(tempDirPath, 'extracted');
+    fs.ensureDirSync(tempExtractionPath);
     zip.extractAllTo(tempExtractionPath, true);
+    console.log('Zip file extracted successfully.');
 
-    // Cloned repository ka naam nikalne ke liye
     const filesInTemp = await fs.readdir(tempExtractionPath, { withFileTypes: true });
-    const clonedRepoFolder = filesInTemp.find(item => item.isDirectory() && item.name !== '.git');
+    const clonedRepoFolder = filesInTemp.find(item => item.isDirectory() && !item.name.startsWith('.'));
     
     if (!clonedRepoFolder) {
       await fs.remove(tempDirPath);
       return res.status(500).json({ success: false, error: 'Cloned repository folder not found after extraction.' });
     }
+    console.log(`Cloned repo folder found: ${clonedRepoFolder.name}`);
 
     const clonedRepoPath = path.join(tempExtractionPath, clonedRepoFolder.name);
-
-    // Temp directory se files ko current path mein copy karein
     await fs.copy(clonedRepoPath, currentPath, { overwrite: true });
+    console.log('Files copied to current path.');
     
-    // Temporary directory ko delete karein
     await fs.remove(tempDirPath);
+    console.log('Temporary folder deleted.');
 
     res.json({ success: true, message: `Repository files imported successfully from ZIP to current path!` });
 
@@ -282,35 +282,70 @@ app.post('/import-git', async (req, res) => {
   }
 });
 
-app.post('/import-zip', upload.single('zipFile'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, error: 'No file uploaded.' });
+app.post('/import-zip', (req, res, next) => {
+  upload.single('zipFile')(req, res, async (err) => {
+    try {
+      if (err instanceof multer.MulterError) {
+        console.error('Multer error:', err);
+        return res.status(500).json({ success: false, error: err.message });
+      } else if (err) {
+        console.error('Unknown upload error:', err);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      console.log('Import from Zip request received.');
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded.' });
+      }
+      console.log('File uploaded:', req.file.path);
+
+      const zipFilePath = req.file.path;
+      const currentPath = req.body.currentPath;
+
+      if (!fs.existsSync(zipFilePath)) {
+        return res.status(404).json({ success: false, error: 'Zip file not found on server.' });
+      }
+      
+      const tempExtractionPath = path.join(path.dirname(zipFilePath), 'extracted-zip');
+      fs.ensureDirSync(tempExtractionPath);
+
+      console.log('Extracting zip file to temporary folder:', tempExtractionPath);
+      const zip = new AdmZip(zipFilePath);
+      zip.extractAllTo(tempExtractionPath, true);
+
+      console.log('Zip file extracted successfully.');
+
+      // Extract hone ke baad, root folder ka naam dhoondhein
+      const filesInTemp = await fs.readdir(tempExtractionPath, { withFileTypes: true });
+      const rootFolder = filesInTemp.find(item => item.isDirectory());
+      
+      if (!rootFolder) {
+        // Agar root folder nahi mila, to seedhe files copy karein
+        await fs.copy(tempExtractionPath, currentPath, { overwrite: true });
+      } else {
+        // Agar root folder mila, to uske contents copy karein
+        const rootFolderPath = path.join(tempExtractionPath, rootFolder.name);
+        await fs.copy(rootFolderPath, currentPath, { overwrite: true });
+      }
+
+      console.log('Files copied to current path.');
+      
+      await fs.remove(zipFilePath);
+      await fs.remove(tempExtractionPath);
+      console.log('Temporary files deleted.');
+
+      res.json({ success: true, message: 'Files imported successfully from ZIP!' });
+    } catch (error) {
+      console.error('Zip import error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    const zipFilePath = req.file.path;
-    const currentPath = req.body.currentPath;
-
-    if (!fs.existsSync(zipFilePath)) {
-      return res.status(404).json({ success: false, error: 'Zip file not found on server.' });
-    }
-
-    const zip = new AdmZip(zipFilePath);
-    zip.extractAllTo(currentPath, true);
-
-    await fs.remove(zipFilePath);
-
-    res.json({ success: true, message: 'Files imported successfully from ZIP!' });
-
-  } catch (error) {
-    console.error('Zip import error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+  });
 });
 
 app.post('/export-zip', async (req, res) => {
     try {
         const { currentPath } = req.body;
+        console.log('Export to Zip request received for path:', currentPath);
         const folderName = path.basename(currentPath) || 'all-files';
         const outputFileName = `${folderName}.zip`;
         const tempDir = path.join(__dirname, 'temp');
@@ -331,6 +366,7 @@ app.post('/export-zip', async (req, res) => {
             try {
                 const stats = await fs.stat(outputPath);
                 const fileSize = formatFileSize(stats.size);
+                console.log(`Zip file created: ${outputPath} with size ${fileSize}`);
                 res.json({ success: true, filePath: outputPath, fileSize: fileSize });
             } catch (err) {
                 res.status(500).json({ success: false, error: 'Could not get file size.' });
@@ -362,6 +398,7 @@ app.post('/export-zip', async (req, res) => {
 app.get('/download-zip-file', (req, res) => {
     const filePath = req.query.path;
     const fileName = path.basename(filePath);
+    console.log(`Download request for: ${filePath}`);
     
     res.download(filePath, fileName, (err) => {
         if (err) {
