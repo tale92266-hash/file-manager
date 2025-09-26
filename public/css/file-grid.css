@@ -38,9 +38,22 @@
     color: #4a90e2; /* Blue color for back icon */
 }
 
-/* Directory specific styles */
+/* Directory specific styles - UPDATED with a lighter touch */
+.directory-item {
+    background: rgba(52, 152, 219, 0.1);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05), -2px -2px 5px rgba(255, 255, 255, 0.2);
+}
+
 .directory-item i {
-    color: #f39c12; /* Orange for folders */
+    color: #3498db; /* Blue color for folders */
+    text-shadow: none;
+}
+
+.directory-item:hover {
+    background: rgba(52, 152, 219, 0.2);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1), -4px -4px 10px rgba(255, 255, 255, 0.4);
 }
 
 /* File specific styles */

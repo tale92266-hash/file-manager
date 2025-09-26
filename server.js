@@ -16,6 +16,7 @@ const app = express();
 expressWs(app);
 const PORT = process.env.PORT || 3000;
 
+// FIX: Corrected the typo from multer.disk.Storage to multer.diskStorage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const tempDir = 'uploads/';
@@ -98,15 +99,30 @@ app.get('/', async (req, res) => {
           iconClass: getFileIcon(file.name, file.isDirectory()),
           isHidden: file.name.startsWith('.'),
           fullPath: filePath,
-          fileExtension: file.isDirectory() ? 'folder' : path.extname(file.name).toLowerCase().substring(1)
+          fileExtension: file.isDirectory() ? 'folder' : path.extname(file.name).toLowerCase().substring(1),
+          // Add modified time to the file object
+          mtime: stats.mtime
         };
       })
     );
 
+    // New Sorting Logic:
+    // 1. Directories pehle, files baad mein.
+    // 2. Apne-apne group mein, non-hidden items pehle, phir hidden items.
+    // 3. Sabhi groups mein, modified date ke hisaab se descending order mein sort karna.
     fileList.sort((a, b) => {
-      if (a.isDirectory && !b.isDirectory) return -1;
-      if (!a.isDirectory && b.isDirectory) return 1;
-      return a.name.localeCompare(b.name);
+      // Step 1: Folders vs. Files
+      if (a.isDirectory !== b.isDirectory) {
+        return a.isDirectory ? -1 : 1;
+      }
+    
+      // Step 2: Hidden vs. Non-hidden
+      if (a.isHidden !== b.isHidden) {
+        return a.isHidden ? 1 : -1;
+      }
+    
+      // Step 3: Sort by modified date (newest first)
+      return b.mtime.getTime() - a.mtime.getTime();
     });
 
     res.render('index', {
