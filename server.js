@@ -7,6 +7,8 @@ const simpleGit = require('simple-git');
 const multer = require('multer'); 
 const AdmZip = require('adm-zip');
 const archiver = require('archiver');
+const os = require('os'); 
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -146,7 +148,6 @@ app.post('/create', async (req, res) => {
     } else {
       await fs.writeFile(newPath, '');
     }
-    
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -179,9 +180,7 @@ app.get('/download', (req, res) => {
   res.download(filePath, (err) => {
       if (err) {
           console.error(`Error downloading file: ${err.message}`);
-          if (err.code === 'ENOENT') {
-              res.status(404).send('File not found!');
-          } else {
+          if (!res.headersSent) {
               res.status(500).send('Error downloading file.');
           }
       }
@@ -200,7 +199,9 @@ app.get('/download-folder', (req, res) => {
 
     archive.on('error', (err) => {
         console.error(`Error zipping folder: ${err.message}`);
-        res.status(500).send('Error zipping folder.');
+        if (!res.headersSent) {
+            res.status(500).send('Error zipping folder.');
+        }
     });
 
     archive.pipe(res);
@@ -208,23 +209,72 @@ app.get('/download-folder', (req, res) => {
     archive.finalize();
 });
 
+// Git import ka naya implementation
 app.post('/import-git', async (req, res) => {
   try {
-    const { repoUrl, currentPath } = req.body;
+    let { repoUrl, currentPath } = req.body;
     if (!repoUrl) {
       return res.status(400).json({ success: false, error: 'GitHub repository URL is required.' });
     }
 
-    const repoName = path.basename(repoUrl, path.extname(repoUrl));
-    const targetPath = path.join(currentPath, repoName);
-
-    if (await fs.pathExists(targetPath)) {
-      await fs.remove(targetPath);
+    // .git ko URL se hata dein agar maujood hai
+    if (repoUrl.endsWith('.git')) {
+        repoUrl = repoUrl.slice(0, -4);
     }
-    
-    await simpleGit().clone(repoUrl, targetPath);
 
-    res.json({ success: true, message: `Repository '${repoName}' cloned successfully!` });
+    const repoName = path.basename(repoUrl);
+    const branchesToTry = ['main', 'master'];
+    let zipUrl = '';
+    let response;
+
+    // Branches ko try karein
+    for (const branch of branchesToTry) {
+        zipUrl = `${repoUrl}/archive/refs/heads/${branch}.zip`;
+        response = await fetch(zipUrl);
+        if (response.ok) {
+            break; // Agar download success ho gaya to loop se bahar aa jayen
+        }
+    }
+
+    if (!response || !response.ok) {
+      return res.status(500).json({ success: false, error: `Failed to download repository zip from main/master branch. Please check the URL and branch name.` });
+    }
+
+    const tempDirPrefix = 'git-zip-';
+    const tempDirPath = await fs.mkdtemp(path.join(os.tmpdir(), tempDirPrefix));
+    const zipFilePath = path.join(tempDirPath, `${repoName}.zip`);
+
+    // Download the zip file
+    const fileStream = fs.createWriteStream(zipFilePath);
+    await new Promise((resolve, reject) => {
+      response.body.pipe(fileStream);
+      response.body.on("error", reject);
+      fileStream.on("finish", resolve);
+    });
+
+    // Extract the zip file
+    const zip = new AdmZip(zipFilePath);
+    const tempExtractionPath = path.join(tempDirPath, 'extracted');
+    zip.extractAllTo(tempExtractionPath, true);
+
+    // Cloned repository ka naam nikalne ke liye
+    const filesInTemp = await fs.readdir(tempExtractionPath, { withFileTypes: true });
+    const clonedRepoFolder = filesInTemp.find(item => item.isDirectory() && item.name !== '.git');
+    
+    if (!clonedRepoFolder) {
+      await fs.remove(tempDirPath);
+      return res.status(500).json({ success: false, error: 'Cloned repository folder not found after extraction.' });
+    }
+
+    const clonedRepoPath = path.join(tempExtractionPath, clonedRepoFolder.name);
+
+    // Temp directory se files ko current path mein copy karein
+    await fs.copy(clonedRepoPath, currentPath, { overwrite: true });
+    
+    // Temporary directory ko delete karein
+    await fs.remove(tempDirPath);
+
+    res.json({ success: true, message: `Repository files imported successfully from ZIP to current path!` });
 
   } catch (error) {
     console.error('Git import error:', error);
@@ -290,6 +340,9 @@ app.post('/export-zip', async (req, res) => {
         archive.pipe(output);
         const filesAndFolders = await fs.readdir(currentPath, { withFileTypes: true });
         for (const item of filesAndFolders) {
+            if (item.name === 'node_modules') {
+                continue;
+            }
             const itemPath = path.join(currentPath, item.name);
             if (item.isDirectory()) {
                 archive.directory(itemPath, item.name);
