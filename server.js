@@ -314,7 +314,6 @@ app.get('/download-zip-file', (req, res) => {
         if (err) {
             console.error('Download error:', err);
         }
-        // Temp file ko download poora hone ya error ke baad delete karein
         fs.remove(filePath, removeErr => {
             if (removeErr) console.error('Failed to remove temp file:', removeErr);
         });
