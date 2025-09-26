@@ -116,6 +116,9 @@
                     <button class="btn-primary" id="uploadButton" aria-label="Upload Zip">
                         <i class="bi bi-upload"></i>
                     </button>
+                    <button class="btn-primary" id="exportButton" aria-label="Export to Zip">
+                        <i class="fas fa-file-export"></i>
+                    </button>
                 </div>
             </header>
 
@@ -195,7 +198,8 @@
             </div>
             
             <%- include('partials/import-modal') %>
-            <%- include('partials/upload-modal') %> <%- include('partials/editor') %>
+            <%- include('partials/upload-modal') %>
+            <%- include('partials/processing-modal') %> <%- include('partials/editor') %>
             <%- include('partials/context-menu') %>
             <%- include('partials/rename-modal') %>
             <%- include('partials/delete-modal') %>

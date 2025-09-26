@@ -5,14 +5,14 @@ const mime = require('mime-types');
 const { parseGitignore } = require('parse-gitignore-ts');
 const simpleGit = require('simple-git'); 
 const multer = require('multer'); 
-const AdmZip = require('adm-zip'); 
+const AdmZip = require('adm-zip');
+const archiver = require('archiver');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Ensure the directory exists
     const tempDir = 'uploads/';
     fs.ensureDirSync(tempDir);
     cb(null, tempDir);
@@ -246,7 +246,7 @@ app.post('/import-zip', upload.single('zipFile'), async (req, res) => {
     }
 
     const zip = new AdmZip(zipFilePath);
-    zip.extractAllTo(currentPath, true); 
+    zip.extractAllTo(currentPath, true);
 
     await fs.remove(zipFilePath);
 
@@ -257,6 +257,70 @@ app.post('/import-zip', upload.single('zipFile'), async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+app.post('/export-zip', async (req, res) => {
+    try {
+        const { currentPath } = req.body;
+        const folderName = path.basename(currentPath) || 'all-files';
+        const outputFileName = `${folderName}.zip`;
+        const tempDir = path.join(__dirname, 'temp');
+        await fs.ensureDir(tempDir);
+        const outputPath = path.join(tempDir, outputFileName);
+
+        const output = fs.createWriteStream(outputPath);
+        const archive = archiver('zip', {
+            zlib: { level: 9 }
+        });
+        
+        archive.on('error', (err) => {
+            console.error(`Error zipping folder: ${err.message}`);
+            res.status(500).json({ success: false, error: 'Error zipping folder.' });
+        });
+
+        output.on('close', async () => {
+            try {
+                const stats = await fs.stat(outputPath);
+                const fileSize = formatFileSize(stats.size);
+                res.json({ success: true, filePath: outputPath, fileSize: fileSize });
+            } catch (err) {
+                res.status(500).json({ success: false, error: 'Could not get file size.' });
+            }
+        });
+        
+        archive.pipe(output);
+        const filesAndFolders = await fs.readdir(currentPath, { withFileTypes: true });
+        for (const item of filesAndFolders) {
+            const itemPath = path.join(currentPath, item.name);
+            if (item.isDirectory()) {
+                archive.directory(itemPath, item.name);
+            } else {
+                archive.file(itemPath, { name: item.name });
+            }
+        }
+        
+        archive.finalize();
+
+    } catch (error) {
+        console.error('Export zip error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/download-zip-file', (req, res) => {
+    const filePath = req.query.path;
+    const fileName = path.basename(filePath);
+    
+    res.download(filePath, fileName, (err) => {
+        if (err) {
+            console.error('Download error:', err);
+        }
+        // Temp file ko download poora hone ya error ke baad delete karein
+        fs.remove(filePath, removeErr => {
+            if (removeErr) console.error('Failed to remove temp file:', removeErr);
+        });
+    });
+});
+
 
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';

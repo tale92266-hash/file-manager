@@ -490,14 +490,14 @@ function importFromGit() {
     });
 }
 
-// New ZIP Upload functions
+// ZIP Upload functions
 function showUploadModal() {
     document.getElementById('uploadModal').classList.add('active');
 }
 
 function closeUploadModal() {
     document.getElementById('uploadModal').classList.remove('active');
-    document.getElementById('zipFileInput').value = ''; // File input ko reset karein
+    document.getElementById('zipFileInput').value = ''; 
 }
 
 function uploadZip() {
@@ -522,7 +522,6 @@ function uploadZip() {
         })
         .then(response => {
             if (!response.ok) {
-                // Agar response successful nahi hai, to error throw karein
                 throw new Error('Server returned an error: ' + response.statusText);
             }
             return response.json();
@@ -536,13 +535,53 @@ function uploadZip() {
             }
         })
         .catch(error => {
-            // Is block mein network aur server-side errors ko handle karein
             showNotification('Error during upload: ' + error.message, 'error');
         });
     } catch (error) {
-        // Is block mein client-side errors ko handle karein
         showNotification('Client-side error: ' + error.message, 'error');
     }
+}
+
+// New Export to Zip function
+function exportToZip() {
+    const currentPath = getBasePath();
+    showProcessingModal();
+
+    fetch('/export-zip', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ currentPath: currentPath })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Server returned an error: ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        hideProcessingModal();
+        if (data.success) {
+            showNotification(`Export successful! File size: ${data.fileSize}. Your download will begin shortly.`, 'success');
+            // Download ko trigger karein
+            window.location.href = `/download-zip-file?path=${encodeURIComponent(data.filePath)}`;
+        } else {
+            showNotification('Export failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        hideProcessingModal();
+        showNotification('An error occurred during export: ' + error.message, 'error');
+    });
+}
+
+function showProcessingModal() {
+    document.getElementById('processingModal').classList.add('active');
+}
+
+function hideProcessingModal() {
+    document.getElementById('processingModal').classList.remove('active');
 }
 
 
@@ -626,6 +665,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadButton = document.getElementById('uploadButton');
     if(uploadButton) {
         uploadButton.addEventListener('click', showUploadModal);
+    }
+
+    const exportButton = document.getElementById('exportButton');
+    if(exportButton) {
+        exportButton.addEventListener('click', exportToZip);
     }
     
     const closeCreateModalBtn = document.getElementById('closeCreateModal');
