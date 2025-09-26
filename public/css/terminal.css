@@ -1,0 +1,366 @@
+/* Terminal Modal Styles - Larger & Mobile Optimized */
+#terminalModal .modal-content.full-screen.terminal-modal-content {
+    background: linear-gradient(135deg, #0f1419 0%, #1a1d23 50%, #2d3748 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(59, 130, 246, 0.1);
+    display: flex;
+    flex-direction: column;
+    animation: terminalSlideIn 0.5s ease-out;
+    height: 70vh; /* Height badha di - 45vh se 70vh */
+    max-height: 70vh;
+    width: 90vw; /* Width badha di - 85vw se 90vw */
+    max-width: 1400px; /* Max width badha di */
+    border-radius: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    position: relative;
+}
+
+@keyframes terminalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Header Section */
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1.5rem; /* Padding badha di */
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: #fff;
+    border-bottom: 2px solid #3b82f6;
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+    height: 55px; /* Height badha di */
+}
+
+.terminal-title-section {
+    display: flex;
+    align-items: center;
+}
+
+.terminal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    font-size: 1.1rem; /* Font size badha di */
+    color: #e2e8f0;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.terminal-title i {
+    color: #3b82f6;
+    font-size: 1rem;
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.terminal-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.terminal-actions .btn-icon {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+    color: #e2e8f0;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 0.5rem 0.8rem; /* Padding badha di */
+    border-radius: 6px;
+    font-size: 0.85rem; /* Font size badha di */
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.terminal-actions .btn-icon:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.2) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.terminal-actions .btn-danger {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.terminal-actions .btn-danger:hover {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.2) 100%);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+/* Command Section */
+.terminal-command-section {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+    padding: 1rem 1.5rem; /* Padding badha di */
+    position: relative;
+    z-index: 9;
+    flex-shrink: 0;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.terminal-input-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: rgba(15, 20, 25, 0.5);
+    padding: 0.8rem 1rem; /* Padding badha di */
+    border-radius: 8px;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    transition: all 0.3s ease;
+    height: 45px; /* Height badha di */
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.terminal-input-container:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 
+        0 0 0 3px rgba(59, 130, 246, 0.2),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: rgba(15, 20, 25, 0.7);
+}
+
+/* Path Truncation for Prompt */
+.terminal-prompt {
+    color: #10b981;
+    font-weight: 700;
+    margin-right: 0.6rem;
+    user-select: none;
+    white-space: nowrap;
+    font-size: 14px; /* Font size badha di */
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    max-width: 200px; /* Max width for path truncation */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Mobile Zoom Fix - CRITICAL */
+.terminal-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e2e8f0;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 16px; /* 16px se zyada hona chahiye zoom ko prevent karne ke liye */
+    font-weight: 500;
+    min-width: 0;
+    /* iOS Zoom Prevention */
+    -webkit-appearance: none;
+    -webkit-text-size-adjust: 100%;
+    transform: translateZ(0);
+}
+
+.terminal-input::placeholder {
+    color: #64748b;
+    font-style: italic;
+    font-size: 15px; /* Placeholder bhi 16px ke paas */
+}
+
+/* Output Body Section - Larger */
+.terminal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.2rem; /* Padding badha di */
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 14px; /* Font size badha di */
+    color: #e2e8f0;
+    line-height: 1.5; /* Line height badha di */
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+    background: rgba(15, 20, 25, 0.1);
+}
+
+.terminal-output {
+    flex: 1;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-y: auto;
+    margin: 0;
+    padding: 1rem; /* Padding badha di */
+    background: rgba(15, 20, 25, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    min-height: 0;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Better Scrollbar */
+.terminal-output::-webkit-scrollbar {
+    width: 6px; /* Width badha di */
+}
+
+.terminal-output::-webkit-scrollbar-track {
+    background: rgba(15, 20, 25, 0.5);
+    border-radius: 3px;
+}
+
+.terminal-output::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border-radius: 3px;
+}
+
+.terminal-output::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+}
+
+/* Text Styles */
+.terminal-error-text {
+    color: #ef4444;
+    font-weight: 600;
+    text-shadow: 0 0 5px rgba(239, 68, 68, 0.3);
+}
+
+.terminal-success-text {
+    color: #10b981;
+    font-weight: 600;
+    text-shadow: 0 0 5px rgba(16, 185, 129, 0.3);
+}
+
+.terminal-info-text {
+    color: #64748b;
+}
+
+.terminal-warning-text {
+    color: #f59e0b;
+    font-weight: 600;
+    text-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
+}
+
+.terminal-loading {
+    color: #f59e0b;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1;
+        text-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
+    }
+    50% { 
+        opacity: 0.6;
+        text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    #terminalModal .modal-content.full-screen.terminal-modal-content {
+        height: 80vh; /* Mobile par aur bada */
+        width: 95vw;
+        border-radius: 10px;
+    }
+    
+    .terminal-header {
+        padding: 0.6rem 1rem;
+        height: 50px;
+    }
+    
+    .terminal-command-section {
+        padding: 0.8rem 1rem;
+    }
+    
+    .terminal-body {
+        padding: 1rem;
+    }
+    
+    .terminal-output {
+        font-size: 13px;
+        padding: 0.8rem;
+    }
+    
+    /* Mobile Zoom Fix - Critical */
+    .terminal-input {
+        font-size: 16px; /* iPhone zoom prevent karne ke liye minimum 16px */
+    }
+    
+    .terminal-title {
+        font-size: 1rem;
+    }
+    
+    .terminal-actions .btn-text {
+        display: none;
+    }
+    
+    .terminal-actions .btn-icon {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    .terminal-input-container {
+        height: 42px;
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .terminal-prompt {
+        font-size: 13px;
+        max-width: 150px; /* Mobile par path width kam */
+    }
+}
+
+@media (max-width: 480px) {
+    #terminalModal .modal-content.full-screen.terminal-modal-content {
+        height: 85vh; /* Small mobile par maximum space */
+    }
+    
+    .terminal-output {
+        font-size: 12px;
+    }
+    
+    /* iPhone Zoom Fix */
+    .terminal-input {
+        font-size: 16px; /* Bilkul 16px minimum */
+    }
+    
+    .terminal-header {
+        height: 45px;
+    }
+    
+    .terminal-input-container {
+        height: 40px;
+    }
+    
+    .terminal-prompt {
+        font-size: 12px;
+        max-width: 120px; /* Small mobile par aur kam */
+    }
+}
+
+/* iOS Safari Specific Fixes */
+@supports (-webkit-touch-callout: none) {
+    .terminal-input {
+        font-size: 16px !important; /* iOS par force 16px */
+        -webkit-text-size-adjust: 100%;
+        -webkit-appearance: none;
+        border-radius: 0; /* iOS ki default styling remove karne ke liye */
+    }
+}
+
+/* Path Truncation JavaScript Helper Classes */
+.terminal-prompt.long-path::before {
+    content: '~/..';
+    color: #10b981;
+}
+
+.terminal-prompt.truncated {
+    direction: rtl; /* Right to left for showing last parts */
+    text-align: left;
+}

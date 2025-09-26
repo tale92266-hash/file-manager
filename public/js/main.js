@@ -5,6 +5,7 @@ let selectedFileName = '';
 let selectedFileType = ''; // New variable to store the type (file/folder)
 let originalContent = ''; // Variable to store original file content
 let activeContextMenu = null; // Track the currently active context menu
+let terminalWs; // WebSocket connection for the terminal
 
 // Helper function to get the base path from the URL
 function getBasePath() {
@@ -638,6 +639,61 @@ function showHeaderActionsModal() {
     document.getElementById('headerActionsModal').classList.add('active');
 }
 
+// Terminal Modal Functions
+function showTerminalModal() {
+    document.getElementById('terminalModal').classList.add('active');
+    document.getElementById('headerActionsModal').classList.remove('active');
+    // Initialize WebSocket connection
+    if (!terminalWs || terminalWs.readyState === WebSocket.CLOSED) {
+        initializeTerminal();
+    }
+}
+
+function closeTerminalModal() {
+    document.getElementById('terminalModal').classList.remove('active');
+}
+
+function initializeTerminal() {
+    const terminalOutput = document.getElementById('terminalOutput');
+    const terminalInput = document.getElementById('terminalInput');
+
+    terminalOutput.innerHTML = '';
+    terminalWs = new WebSocket(`ws://${window.location.host}/terminal`);
+
+    terminalWs.onopen = () => {
+        terminalOutput.innerHTML += '<span class="terminal-info-text">Connected to server. Ready to execute commands.</span>\n';
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        terminalInput.focus();
+    };
+
+    terminalWs.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        let outputText = data.output;
+        
+        // Handle loading text for specific commands
+        if (data.output.includes('npm install')) {
+          outputText = '<span class="terminal-loading">npm install...</span>\n';
+        } else if (data.output.includes('node server.js')) {
+          outputText = '<span class="terminal-loading">Starting server...</span>\n';
+        } else if (data.output.includes('nodemon server.js')) {
+          outputText = '<span class="terminal-loading">Starting nodemon...</span>\n';
+        }
+        
+        // Append output to the terminal display
+        terminalOutput.innerHTML += outputText.replace(/\n/g, '<br>').replace(/\r/g, '');
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    };
+
+    terminalWs.onclose = () => {
+        terminalOutput.innerHTML += '\n<span class="terminal-error-text">Connection lost. Please reopen the terminal.</span>\n';
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    };
+
+    terminalWs.onerror = (error) => {
+        console.error('Terminal WebSocket error:', error);
+        showNotification('Terminal connection error.', 'error');
+    };
+}
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
@@ -837,6 +893,55 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // New Terminal Button logic
+    const openTerminalButton = document.getElementById('openTerminalButton');
+    if (openTerminalButton) {
+        openTerminalButton.addEventListener('click', showTerminalModal);
+    }
+
+    const closeTerminalModalBtn = document.getElementById('closeTerminalModal');
+    if (closeTerminalModalBtn) {
+        closeTerminalModalBtn.addEventListener('click', closeTerminalModal);
+    }
+
+    const terminalInput = document.getElementById('terminalInput');
+    const terminalOutput = document.getElementById('terminalOutput');
+    const terminalPrompt = document.getElementById('terminalPrompt');
+
+    function updateTerminalPrompt() {
+        terminalPrompt.textContent = getBasePath() + '$ ';
+    }
+    updateTerminalPrompt();
+
+    terminalInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const command = terminalInput.value.trim();
+            if (command) {
+                if (terminalWs && terminalWs.readyState === WebSocket.OPEN) {
+                    terminalWs.send(JSON.stringify({
+                        command: command,
+                        currentPath: getBasePath(),
+                        type: 'cmd'
+                    }));
+                } else {
+                    terminalOutput.innerHTML += '\n<span class="terminal-error-text">Connection is not open. Please try again.</span>\n';
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                }
+                terminalInput.value = '';
+            }
+        }
+    });
+
+    const terminalCtrlCButton = document.getElementById('terminalCtrlCButton');
+    if (terminalCtrlCButton) {
+        terminalCtrlCButton.addEventListener('click', () => {
+            if (terminalWs && terminalWs.readyState === WebSocket.OPEN) {
+                terminalWs.send(JSON.stringify({ type: 'ctrlc' }));
+            }
+        });
+    }
+
     document.addEventListener('click', function(event) {
         const sidebar = document.getElementById('sidebar');
         const sidebarToggleBtn = document.getElementById('sidebarToggle');
@@ -874,3 +979,49 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function initializeTerminal() {
+    const terminalOutput = document.getElementById('terminalOutput');
+    const terminalInput = document.getElementById('terminalInput');
+    const terminalPrompt = document.getElementById('terminalPrompt');
+
+    terminalOutput.innerHTML = '';
+    terminalWs = new WebSocket(`ws://${window.location.host}/terminal`);
+
+    terminalWs.onopen = () => {
+        terminalOutput.innerHTML += '<span class="terminal-info-text">Connected to server. Ready to execute commands.</span>\n';
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        terminalInput.focus();
+        terminalPrompt.textContent = getBasePath() + '$ ';
+    };
+
+    terminalWs.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const terminalOutput = document.getElementById('terminalOutput');
+        
+        let outputText = data.output;
+        
+        // Handle loading text for specific commands
+        if (data.output.includes('npm install')) {
+          outputText = '<span class="terminal-loading">npm install...</span>\n';
+        } else if (data.output.includes('node server.js')) {
+          outputText = '<span class="terminal-loading">Starting server...</span>\n';
+        } else if (data.output.includes('nodemon server.js')) {
+          outputText = '<span class="terminal-loading">Starting nodemon...</span>\n';
+        }
+
+        // Append output to the terminal display
+        terminalOutput.innerHTML += outputText.replace(/\n/g, '<br>').replace(/\r/g, '');
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    };
+
+    terminalWs.onclose = () => {
+        terminalOutput.innerHTML += '\n<span class="terminal-error-text">Connection lost. Please reopen the terminal.</span>\n';
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    };
+
+    terminalWs.onerror = (error) => {
+        console.error('Terminal WebSocket error:', error);
+        showNotification('Terminal connection error.', 'error');
+    };
+}

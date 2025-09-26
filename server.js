@@ -1,4 +1,5 @@
 const express = require('express');
+const expressWs = require('express-ws');
 const fs = require('fs-extra');
 const path = require('path');
 const mime = require('mime-types');
@@ -9,8 +10,10 @@ const AdmZip = require('adm-zip');
 const archiver = require('archiver');
 const os = require('os'); 
 const fetch = require('node-fetch');
+const { spawn } = require('child_process');
 
 const app = express();
+expressWs(app);
 const PORT = process.env.PORT || 3000;
 
 const storage = multer.diskStorage({
@@ -404,6 +407,54 @@ app.get('/download-zip-file', (req, res) => {
         fs.remove(filePath, removeErr => {
             if (removeErr) console.error('Failed to remove temp file:', removeErr);
         });
+    });
+});
+
+let activeProcess = null;
+
+app.ws('/terminal', (ws, req) => {
+    ws.on('message', (msg) => {
+        const { command, currentPath, type } = JSON.parse(msg);
+
+        if (type === 'cmd') {
+            if (activeProcess) {
+                ws.send(JSON.stringify({ output: '\r\nAnother process is already running. Please stop it first.\r\n', type: 'error' }));
+                return;
+            }
+
+            ws.send(JSON.stringify({ output: `> ${command}\r\n`, type: 'command' }));
+
+            const [cmd, ...args] = command.split(' ');
+            activeProcess = spawn(cmd, args, { cwd: currentPath, shell: true });
+
+            activeProcess.stdout.on('data', (data) => {
+                ws.send(JSON.stringify({ output: data.toString(), type: 'stdout' }));
+            });
+
+            activeProcess.stderr.on('data', (data) => {
+                ws.send(JSON.stringify({ output: data.toString(), type: 'stderr' }));
+            });
+
+            activeProcess.on('close', (code) => {
+                const message = `\r\nExited with code ${code}.\r\n`;
+                ws.send(JSON.stringify({ output: message, type: 'status' }));
+                activeProcess = null;
+            });
+
+            activeProcess.on('error', (err) => {
+                const message = `\r\nFailed to start command: ${err.message}\r\n`;
+                ws.send(JSON.stringify({ output: message, type: 'error' }));
+                activeProcess = null;
+            });
+
+        } else if (type === 'ctrlc') {
+            if (activeProcess) {
+                activeProcess.kill('SIGINT');
+                ws.send(JSON.stringify({ output: '\r\nProcess terminated by user.\r\n', type: 'status' }));
+            } else {
+                ws.send(JSON.stringify({ output: '\r\nNo active process to stop.\r\n', type: 'error' }));
+            }
+        }
     });
 });
 
