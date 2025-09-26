@@ -759,41 +759,6 @@ function initializeTerminal() {
 }
 
 
-/* === New function to send kill signal for background process === */
-async function killTerminalProcess() {
-    console.log('Attempting to kill active terminal process...');
-    
-    // Agar terminal modal band hai, to use khol do
-    const terminalModal = document.getElementById('terminalModal');
-    if (!terminalModal.classList.contains('active')) {
-        openTerminalModal();
-        await new Promise(r => setTimeout(r, 500)); // Thoda wait karein
-    }
-
-    // Terminal output area ko clear karein
-    const terminalOutput = document.getElementById('terminalOutput');
-    terminalOutput.innerHTML = '';
-    
-    // Status message dikhayein
-    const statusMessage = document.createElement('div');
-    statusMessage.className = 'terminal-info-text';
-    statusMessage.innerText = 'Sending kill signal...';
-    terminalOutput.appendChild(statusMessage);
-
-    // WebSocket se kill signal bhejein
-    if (terminalWs && terminalWs.readyState === WebSocket.OPEN) {
-        terminalWs.send(JSON.stringify({
-            type: 'kill'
-        }));
-    } else {
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'terminal-error-text';
-        errorMessage.innerText = 'WebSocket is not connected. Please refresh the page.';
-        terminalOutput.appendChild(errorMessage);
-    }
-}
-/* ========================================================== */
-
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.file-item').forEach(item => {
@@ -1035,9 +1000,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const terminalCtrlCButton = document.getElementById('terminalCtrlCButton');
     if (terminalCtrlCButton) {
         terminalCtrlCButton.addEventListener('click', () => {
-            if (terminalWs && terminalWs.readyState === WebSocket.OPEN) {
-                terminalWs.send(JSON.stringify({ type: 'ctrlc' }));
-            }
+            showNotification('This function is not available when running multiple processes simultaneously.','error');
         });
     }
 
@@ -1088,49 +1051,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-function initializeTerminal() {
-    const terminalOutput = document.getElementById('terminalOutput');
-    const terminalInput = document.getElementById('terminalInput');
-    const terminalPrompt = document.getElementById('terminalPrompt');
-
-    terminalOutput.innerHTML = '';
-    terminalWs = new WebSocket(`ws://${window.location.host}/terminal`);
-
-    terminalWs.onopen = () => {
-        terminalOutput.innerHTML += '<span class="terminal-info-text">Connected to server. Ready to execute commands.</span>\n';
-        terminalOutput.scrollTop = terminalOutput.scrollHeight;
-        terminalInput.focus();
-        terminalPrompt.textContent = getBasePath() + '$ ';
-    };
-
-    terminalWs.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        const terminalOutput = document.getElementById('terminalOutput');
-        
-        let outputText = data.output;
-        
-        // Handle loading text for specific commands
-        if (data.output.includes('npm install')) {
-          outputText = '<span class="terminal-loading">npm install...</span>\n';
-        } else if (data.output.includes('node server.js')) {
-          outputText = '<span class="terminal-loading">Starting server...</span>\n';
-        } else if (data.output.includes('nodemon server.js')) {
-          outputText = '<span class="terminal-loading">Starting nodemon...</span>\n';
-        }
-
-        // Append output to the terminal display
-        terminalOutput.innerHTML += outputText.replace(/\n/g, '<br>').replace(/\r/g, '');
-        terminalOutput.scrollTop = terminalOutput.scrollHeight;
-    };
-
-    terminalWs.onclose = () => {
-        terminalOutput.innerHTML += '\n<span class="terminal-error-text">Connection lost. Please reopen the terminal.</span>\n';
-        terminalOutput.scrollTop = terminalOutput.scrollHeight;
-    };
-
-    terminalWs.onerror = (error) => {
-        console.error('Terminal WebSocket error:', error);
-        showNotification('Terminal connection error.', 'error');
-    };
-}
