@@ -450,15 +450,27 @@ function cancelEdit() {
     showNotification('Changes cancelled!', 'info');
 }
 
+// Helper function to dynamically shorten messages
+function getShortNotificationText(message) {
+  if (message.includes('File renamed successfully!')) return 'Renamed successfully!';
+  if (message.includes('created successfully!')) return 'Created successfully!';
+  if (message.includes('Path copied to clipboard!')) return 'Path copied!';
+  if (message.includes('Content pasted from clipboard!')) return 'Content pasted!';
+  if (message.includes('Content cut to clipboard!')) return 'Content cut!';
+  if (message.includes('Content copied to clipboard!')) return 'Content copied!';
+  if (message.includes('Export successful!')) return 'Export successful!';
+  if (message.includes('Repository files imported')) return 'Repo imported!';
+  if (message.includes('Files imported successfully from ZIP!')) return 'Files imported!';
+  if (message.includes('File saved successfully!')) return 'Saved!';
+  return message;
+}
 
-// Notification system
+// Notification system - UPDATED
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
+    const shortMessage = getShortNotificationText(message);
     notification.className = `notification ${type}`;
-    notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-        <span>${message}</span>
-    `;
+    notification.innerHTML = `<span>${shortMessage}</span>`;
     
     if (!document.querySelector('.notification-styles')) {
         const style = document.createElement('style');
@@ -467,15 +479,17 @@ function showNotification(message, type = 'info') {
             .notification {
                 position: fixed;
                 top: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                border-radius: 12px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+                border-radius: 10px;
                 color: white;
                 display: flex;
                 align-items: center;
-                gap: 0.75rem;
+                gap: 0.6rem;
                 z-index: 10000;
-                animation: slideIn 0.3s ease;
+                animation: fadeIn 0.3s ease;
                 background: rgba(0, 0, 0, 0.6);
                 backdrop-filter: blur(10px);
                 border: 1px solid rgba(255, 255, 255, 0.2);
@@ -484,9 +498,9 @@ function showNotification(message, type = 'info') {
             .notification.success { background: rgba(40, 167, 69, 0.8); }
             .notification.error { background: rgba(220, 53, 69, 0.8); }
             .notification.info { background: rgba(23, 162, 184, 0.8); }
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-20px) translateX(-50%); }
+                to { opacity: 1; transform: translateY(0) translateX(-50%); }
             }
         `;
         document.head.appendChild(style);

@@ -16,7 +16,6 @@ const app = express();
 expressWs(app);
 const PORT = process.env.PORT || 3000;
 
-// FIX: Corrected the typo from multer.disk.Storage to multer.diskStorage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const tempDir = 'uploads/';
@@ -80,6 +79,35 @@ function getFileIcon(fileName, isDirectory) {
   }
 }
 
+// NEW: Recursive function to find the latest modified date in a folder
+async function getFolderMtime(dirPath) {
+  try {
+    const stats = await fs.stat(dirPath);
+    if (!stats.isDirectory()) {
+      return stats.mtime;
+    }
+    
+    let latestMtime = stats.mtime;
+    const items = await fs.readdir(dirPath);
+    
+    for (const item of items) {
+      const itemPath = path.join(dirPath, item);
+      try {
+        const itemStats = await fs.stat(itemPath);
+        if (itemStats.mtime > latestMtime) {
+          latestMtime = itemStats.mtime;
+        }
+      } catch (err) {
+        // Ignore errors for files that might be deleted during the scan
+        continue;
+      }
+    }
+    return latestMtime;
+  } catch (error) {
+    return new Date(0); // Return a very old date on error
+  }
+}
+
 app.get('/', async (req, res) => {
   try {
     const currentPath = req.query.path || process.cwd();
@@ -90,8 +118,20 @@ app.get('/', async (req, res) => {
     const fileList = await Promise.all(
       files.map(async (file) => {
         const filePath = path.join(currentPath, file.name);
-        const stats = await fs.stat(filePath);
+        let stats;
+        try {
+          stats = await fs.stat(filePath);
+        } catch (error) {
+          // If file is deleted during scan, skip it
+          return null;
+        }
         
+        let mtime = stats.mtime;
+        // NEW: If it's a directory, get the latest modified time from its contents
+        if (file.isDirectory()) {
+            mtime = await getFolderMtime(filePath);
+        }
+
         return {
           name: file.name,
           isDirectory: file.isDirectory(),
@@ -100,28 +140,24 @@ app.get('/', async (req, res) => {
           isHidden: file.name.startsWith('.'),
           fullPath: filePath,
           fileExtension: file.isDirectory() ? 'folder' : path.extname(file.name).toLowerCase().substring(1),
-          // Add modified time to the file object
-          mtime: stats.mtime
+          mtime: mtime
         };
       })
-    );
+    ).then(items => items.filter(item => item !== null)); // Filter out any null items
 
-    // New Sorting Logic:
-    // 1. Directories pehle, files baad mein.
-    // 2. Apne-apne group mein, non-hidden items pehle, phir hidden items.
-    // 3. Sabhi groups mein, modified date ke hisaab se descending order mein sort karna.
+    // NEW: Advanced Sorting Logic
     fileList.sort((a, b) => {
-      // Step 1: Folders vs. Files
+      // Step 1: Directories pehle, files baad mein.
       if (a.isDirectory !== b.isDirectory) {
         return a.isDirectory ? -1 : 1;
       }
     
-      // Step 2: Hidden vs. Non-hidden
+      // Step 2: Apne-apne group mein, non-hidden items pehle, phir hidden items.
       if (a.isHidden !== b.isHidden) {
         return a.isHidden ? 1 : -1;
       }
     
-      // Step 3: Sort by modified date (newest first)
+      // Step 3: Sabhi groups mein, modified date ke hisaab se descending order mein sort karna.
       return b.mtime.getTime() - a.mtime.getTime();
     });
 
