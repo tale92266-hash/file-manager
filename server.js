@@ -1,3 +1,6 @@
+/*
+ * UPDATED: server.js
+ */
 const express = require('express');
 const expressWs = require('express-ws');
 const fs = require('fs-extra');
@@ -231,6 +234,20 @@ app.delete('/delete', async (req, res) => {
   }
 });
 
+// NEW: Endpoint to delete multiple files
+app.delete('/delete-multiple', async (req, res) => {
+    try {
+        const { paths: itemPaths } = req.body;
+        for (const itemPath of itemPaths) {
+            await fs.remove(itemPath);
+        }
+        res.json({ success: true, message: `${itemPaths.length} items deleted successfully!` });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 app.post('/rename', async (req, res) => {
   try {
     const { oldPath, newName } = req.body;
@@ -275,6 +292,37 @@ app.get('/download-folder', (req, res) => {
     archive.directory(folderPath, false);
     archive.finalize();
 });
+
+// NEW: Endpoint to download multiple selected files/folders as a single zip
+app.get('/download-multiple', async (req, res) => {
+    try {
+        const itemPaths = JSON.parse(req.query.paths);
+        const archive = archiver('zip', {
+            zlib: { level: 9 }
+        });
+        
+        res.attachment('selected_files.zip');
+        archive.pipe(res);
+
+        for (const itemPath of itemPaths) {
+            const stats = await fs.stat(itemPath);
+            const itemName = path.basename(itemPath);
+            if (stats.isDirectory()) {
+                archive.directory(itemPath, itemName);
+            } else {
+                archive.file(itemPath, { name: itemName });
+            }
+        }
+        
+        archive.finalize();
+    } catch (error) {
+        console.error(`Error zipping multiple files: ${error.message}`);
+        if (!res.headersSent) {
+            res.status(500).send('Error downloading multiple files.');
+        }
+    }
+});
+
 
 app.post('/import-git', async (req, res) => {
   try {

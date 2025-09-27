@@ -1,12 +1,22 @@
+/*
+ * UPDATED: main.js with bug fix for mobile long-press selection
+ */
 
 let currentPath = '/';
 let hideHidden = true;
-let selectedFilePath = '';
+let selectedFilePaths = [];
 let selectedFileName = '';
 let selectedFileType = '';
 let originalContent = '';
 let activeContextMenu = null;
 let terminalWs;
+let touchTimeout;
+let longPressThreshold = 500;
+let isMultiSelectMode = false;
+let isLongPress = false; // NEW: Flag to track a successful long press
+let isScrolling = false; // NEW: Flag to track scrolling motion
+let touchStartX = 0; // NEW: To track touch start position
+let touchStartY = 0; // NEW: To track touch start position
 
 // Helper function to get the base path from the URL
 function getBasePath() {
@@ -67,9 +77,18 @@ function showContextMenu(event, filePath, fileName) {
     event.preventDefault();
     event.stopPropagation();
     
-    selectedFilePath = filePath;
+    selectedFilePaths = [];
+    selectedFilePaths.push(filePath);
     selectedFileName = fileName;
     selectedFileType = event.currentTarget.closest('.file-item').dataset.type;
+
+    const fileItems = document.querySelectorAll('.file-item');
+    fileItems.forEach(item => {
+        item.classList.remove('selected');
+        if (item.dataset.path === filePath) {
+            item.classList.add('selected');
+        }
+    });
     
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
@@ -100,11 +119,10 @@ function showContextMenu(event, filePath, fileName) {
         activeContextMenu = contextMenu;
     }
     
-    // UPDATED: A new click handler to hide the menu and stop propagation
     document.addEventListener('click', function handleDocClick(e) {
         if (contextMenu && !contextMenu.contains(e.target)) {
             hideContextMenu();
-            e.stopPropagation(); // Stop the click event from bubbling up
+            e.stopPropagation();
         }
         document.removeEventListener('click', handleDocClick);
     });
@@ -123,14 +141,21 @@ function renameFile() {
     const renameModal = document.getElementById('renameModal');
     const renameNewNameInput = document.getElementById('renameNewName');
     
+    const fileItem = document.querySelector('.file-item.selected');
+    if (!fileItem || selectedFilePaths.length > 1) {
+        showNotification('Please select a single item to rename.', 'error');
+        return;
+    }
+    selectedFileName = fileItem.querySelector('.file-name').textContent;
+    selectedFilePath = fileItem.dataset.path;
+
     renameNewNameInput.value = selectedFileName;
     renameModal.classList.add('active');
 
-    // UPDATED: Fix for clicking outside and triggering action below.
     document.addEventListener('click', function handleRenameClick(e) {
         if (!renameModal.contains(e.target)) {
             renameModal.classList.remove('active');
-            e.stopPropagation(); // Stop the click event from bubbling up
+            e.stopPropagation();
         }
         document.removeEventListener('click', handleRenameClick);
     });
@@ -171,24 +196,34 @@ function deleteFile() {
     const deleteModal = document.getElementById('deleteModal');
     const deleteItemName = document.getElementById('deleteItemName');
     
+    const fileItem = document.querySelector('.file-item.selected');
+    if (!fileItem || selectedFilePaths.length > 1) {
+        showNotification('Please select a single item to delete.', 'error');
+        return;
+    }
+    selectedFileName = fileItem.querySelector('.file-name').textContent;
+    selectedFilePath = fileItem.dataset.path;
+
     deleteItemName.textContent = selectedFileName;
     deleteModal.classList.add('active');
 }
 
 function confirmDelete() {
-    fetch('/delete', {
+    const itemsToDelete = selectedFilePaths.length > 0 ? selectedFilePaths : [selectedFilePath];
+
+    fetch('/delete-multiple', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: selectedFilePath })
+        body: JSON.stringify({ paths: itemsToDelete })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('File deleted successfully!', 'success');
+            showNotification('File(s) deleted successfully!', 'success');
             document.getElementById('deleteModal').classList.remove('active');
             setTimeout(() => window.location.reload(), 1000);
         } else {
-            showNotification('Error deleting file: ' + data.error, 'error');
+            showNotification('Error deleting file(s): ' + data.error, 'error');
         }
     })
     .catch(error => {
@@ -196,37 +231,88 @@ function confirmDelete() {
     });
 }
 
+function deleteSelectedFiles() {
+    if (selectedFilePaths.length === 0) {
+        showNotification('No files selected for deletion.', 'error');
+        return;
+    }
+    document.getElementById('headerActionsModal').classList.remove('active');
+    const deleteModal = document.getElementById('deleteModal');
+    const deleteItemName = document.getElementById('deleteItemName');
+    
+    if (selectedFilePaths.length === 1) {
+        const item = document.querySelector('.file-item.selected .file-name').textContent;
+        deleteItemName.textContent = item;
+    } else {
+        deleteItemName.textContent = `${selectedFilePaths.length} items`;
+    }
+
+    deleteModal.classList.add('active');
+}
+
 function copyPath() {
     hideContextMenu();
-    navigator.clipboard.writeText(selectedFilePath).then(() => {
+    if (selectedFilePaths.length !== 1) {
+        showNotification('Please select a single file to copy its path.', 'error');
+        return;
+    }
+    navigator.clipboard.writeText(selectedFilePaths[0]).then(() => {
         showNotification('Path copied to clipboard!', 'success');
     });
 }
 
-// New Download function
 function downloadFile() {
     hideContextMenu();
-    if (!selectedFilePath) {
-        showNotification('No item selected to download.', 'error');
+    if (selectedFilePaths.length !== 1) {
+        showNotification('Please select a single item to download.', 'error');
         return;
     }
-    
+    const filePath = selectedFilePaths[0];
+    const fileName = document.querySelector(`[data-path="${filePath}"] .file-name`).textContent;
+    const fileType = document.querySelector(`[data-path="${filePath}"]`).dataset.type;
+
     let downloadUrl = '';
-    if (selectedFileType === 'folder') {
-        downloadUrl = `/download-folder?path=${encodeURIComponent(selectedFilePath)}`;
-        showNotification(`Downloading folder '${selectedFileName}' as a zip file...`, 'info');
+    if (fileType === 'folder') {
+        downloadUrl = `/download-folder?path=${encodeURIComponent(filePath)}`;
+        showNotification(`Downloading folder '${fileName}' as a zip file...`, 'info');
     } else {
-        downloadUrl = `/download?path=${encodeURIComponent(selectedFilePath)}`;
-        showNotification(`Downloading file '${selectedFileName}'...`, 'info');
+        downloadUrl = `/download?path=${encodeURIComponent(filePath)}`;
+        showNotification(`Downloading file '${fileName}'...`, 'info');
     }
 
     const a = document.createElement('a');
     a.href = downloadUrl;
-    a.download = selectedFileName; 
+    a.download = fileName; 
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 }
+
+function downloadSelectedFiles() {
+    if (selectedFilePaths.length === 0) {
+        showNotification('No files selected for download.', 'error');
+        return;
+    }
+    document.getElementById('headerActionsModal').classList.remove('active');
+    
+    const itemsToDownload = selectedFilePaths.map(filePath => {
+        const itemElement = document.querySelector(`[data-path="${filePath}"]`);
+        const fileName = itemElement.querySelector('.file-name').textContent;
+        const isDirectory = itemElement.dataset.type === 'folder';
+        return { path: filePath, name: fileName, isDirectory: isDirectory };
+    });
+
+    const downloadUrl = `/download-multiple?paths=${encodeURIComponent(JSON.stringify(selectedFilePaths))}`;
+    showNotification(`Downloading ${selectedFilePaths.length} selected items as a zip file...`, 'info');
+
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = 'selected_files.zip'; 
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 
 // Create modal functions
 function showCreateModal() {
@@ -277,7 +363,6 @@ function createItem(type) {
     });
 }
 
-// NEW HELPER FUNCTION: To manage editor state updates
 function updateEditorState() {
     const codeEditor = document.getElementById('codeEditor');
     const saveButton = document.getElementById('saveFileButton');
@@ -296,7 +381,6 @@ function updateEditorState() {
     }
 }
 
-// Editor modal functions
 function openFileEditor(filePath, fileName) {
     const editorModal = document.getElementById('editorModal');
     const editorTitle = document.getElementById('editorTitle');
@@ -312,7 +396,6 @@ function openFileEditor(filePath, fileName) {
     codeEditor.classList.add('loading');
     codeEditor.readOnly = true;
 
-    // Call the function to adjust editor height as soon as it opens
     adjustEditorHeightForKeyboard();
 
     fetch(`/file-content?path=${encodeURIComponent(filePath)}`)
@@ -322,11 +405,10 @@ function openFileEditor(filePath, fileName) {
             codeEditor.readOnly = false;
 
             if (data.content !== null && data.content !== undefined) {
-                // FIXED: Yeha se placeholder text remove kiya gaya hai. Ab khali files khali hi rahengi.
                 codeEditor.value = data.content;
                 originalContent = data.content;
                 
-                updateEditorState(); // NEW: Update state after loading content
+                updateEditorState();
             } else {
                 codeEditor.value = 'Error loading file content.';
                 showNotification('Error loading file: ' + data.error, 'error');
@@ -364,8 +446,7 @@ function saveFile() {
         if (data.success) {
             showNotification('File saved successfully!', 'success');
             originalContent = content;
-            updateEditorState(); // NEW: Update state after saving
-            // FIXED: Ab save hone par editor apne aap band hoga.
+            updateEditorState();
             closeFileEditor(); 
         } else {
             showNotification('Error saving file: ' + data.error, 'error');
@@ -376,11 +457,10 @@ function saveFile() {
     });
 }
 
-// Editor specific functions
 function clearEditor() {
     const codeEditor = document.getElementById('codeEditor');
     codeEditor.value = '';
-    updateEditorState(); // NEW: Update state after clearing
+    updateEditorState();
     showNotification('Editor cleared!', 'info');
 }
 
@@ -391,7 +471,7 @@ function pasteContent() {
         const success = document.execCommand('paste');
         if (success) {
             showNotification('Pasted content from clipboard!', 'info');
-            updateEditorState(); // NEW: Update state after pasting
+            updateEditorState();
         } else {
             throw new Error('execCommand failed');
         }
@@ -424,7 +504,7 @@ function cutContent() {
         if (success) {
             codeEditor.value = '';
             showNotification('Content cut to clipboard!', 'info');
-            updateEditorState(); // NEW: Update state after cutting
+            updateEditorState();
         } else {
             throw new Error('execCommand failed');
         }
@@ -463,13 +543,11 @@ function copyContent() {
     }
 }
 
-
 function cancelEdit() {
     openFileEditor(selectedFilePath, document.getElementById('editorTitle').textContent);
     showNotification('Changes cancelled!', 'info');
 }
 
-// Helper function to dynamically shorten messages
 function getShortNotificationText(message) {
   if (message.includes('File renamed successfully!')) return 'Renamed successfully!';
   if (message.includes('created successfully!')) return 'Created successfully!';
@@ -484,7 +562,6 @@ function getShortNotificationText(message) {
   return message;
 }
 
-// Notification system - UPDATED
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     const shortMessage = getShortNotificationText(message);
@@ -532,7 +609,6 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Git Import functions
 function showImportModal() {
     document.getElementById('importModal').classList.add('active');
     document.getElementById('headerActionsModal').classList.remove('active');
@@ -579,7 +655,6 @@ function importFromGit() {
     });
 }
 
-// ZIP Upload functions
 function showUploadModal() {
     document.getElementById('uploadModal').classList.add('active');
     document.getElementById('headerActionsModal').classList.remove('active');
@@ -635,7 +710,6 @@ function uploadZip() {
     }
 }
 
-// New Upload Multiple Files functions
 function showUploadFilesModal() {
     document.getElementById('uploadFilesModal').classList.add('active');
     document.getElementById('headerActionsModal').classList.remove('active');
@@ -682,7 +756,6 @@ function uploadMultipleFiles() {
     });
 }
 
-// Export to Zip function
 function exportToZip() {
     const currentPath = getBasePath();
     showProcessingModal();
@@ -723,16 +796,23 @@ function hideProcessingModal() {
     document.getElementById('processingModal').classList.remove('active');
 }
 
-// New show header actions modal
 function showHeaderActionsModal() {
     document.getElementById('headerActionsModal').classList.add('active');
+    
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+    if (selectedFilePaths.length > 0) {
+        deleteSelectedBtn.disabled = false;
+        downloadSelectedBtn.disabled = false;
+    } else {
+        deleteSelectedBtn.disabled = true;
+        downloadSelectedBtn.disabled = true;
+    }
 }
 
-// Terminal Modal Functions
 function showTerminalModal() {
     document.getElementById('terminalModal').classList.add('active');
     document.getElementById('headerActionsModal').classList.remove('active');
-    // Initialize WebSocket connection
     if (!terminalWs || terminalWs.readyState === WebSocket.CLOSED) {
         initializeTerminal();
     }
@@ -763,7 +843,6 @@ function initializeTerminal() {
         
         let outputText = data.output;
         
-        // Handle loading text for specific commands
         if (data.output.includes('npm install')) {
           outputText = '<span class="terminal-loading">npm install...</span>\n';
         } else if (data.output.includes('node server.js')) {
@@ -787,7 +866,6 @@ function initializeTerminal() {
     };
 }
 
-// Function to dynamically adjust editor height on mobile to prevent keyboard overlap
 function adjustEditorHeightForKeyboard() {
     if (window.innerWidth <= 768) {
         const editor = document.getElementById('codeEditor');
@@ -795,8 +873,7 @@ function adjustEditorHeightForKeyboard() {
         const footerHeight = document.querySelector('.editor-footer').offsetHeight;
         const totalNonContentHeight = headerHeight + footerHeight;
         
-        // Thoda extra space
-        const extraSpace = 10; // Value has been slightly reduced
+        const extraSpace = 10;
         const newHeight = window.innerHeight - totalNonContentHeight - extraSpace;
         
         editor.style.height = `${newHeight}px`;
@@ -808,7 +885,6 @@ function adjustEditorHeightForKeyboard() {
     }
 }
 
-// NEW FUNCTION: File grid height adjustment for mobile keyboard
 function adjustFileGridHeight() {
     if (window.innerWidth <= 768) {
         const mainContent = document.querySelector('.main-content');
@@ -818,25 +894,127 @@ function adjustFileGridHeight() {
         
         if (mainContent && header && breadcrumb && footer) {
             const totalNonContentHeight = header.offsetHeight + breadcrumb.offsetHeight + footer.offsetHeight;
-            const newHeight = window.innerHeight - totalNonContentHeight - 20; // Thoda extra space
+            const newHeight = window.innerHeight - totalNonContentHeight - 20;
             mainContent.style.maxHeight = `${newHeight}px`;
         }
     } else {
         const mainContent = document.querySelector('.main-content');
         if (mainContent) {
-            mainContent.style.maxHeight = 'none'; // Revert to default on desktop
+            mainContent.style.maxHeight = 'none';
         }
     }
 }
 
+function clearSelection() {
+    document.querySelectorAll('.file-item').forEach(el => el.classList.remove('selected'));
+    selectedFilePaths = [];
+    isMultiSelectMode = false;
+}
 
-// Initialize app
+function updateFileSelection(item, isCtrlPressed) {
+    // NEW: Check if the item is the parent directory. If so, do not select.
+    if (item.classList.contains('parent-dir-item')) {
+        return;
+    }
+    
+    const filePath = item.dataset.path;
+    const isSelected = item.classList.contains('selected');
+
+    if (isMultiSelectMode || isCtrlPressed) {
+        if (isSelected) {
+            item.classList.remove('selected');
+            selectedFilePaths = selectedFilePaths.filter(path => path !== filePath);
+            
+            if (selectedFilePaths.length === 0) {
+                isMultiSelectMode = false;
+                showNotification('Multi-select mode deactivated.', 'info');
+            }
+        } else {
+            item.classList.add('selected');
+            selectedFilePaths.push(filePath);
+            isMultiSelectMode = true;
+        }
+    } else {
+        clearSelection();
+        item.classList.add('selected');
+        selectedFilePaths.push(filePath);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.file-item').forEach(item => {
+        // Desktop multi-select with Ctrl/Cmd key
         item.addEventListener('click', (event) => {
+            event.preventDefault();
             if (event.target.closest('.file-actions')) {
                 return;
             }
+
+            const path = item.dataset.path;
+            const type = item.dataset.type;
+            const isCtrlPressed = event.ctrlKey || event.metaKey;
+
+            if (isMultiSelectMode || isCtrlPressed) {
+                updateFileSelection(item, isCtrlPressed);
+            } else if (type === 'folder') {
+                navigateToPath(path);
+            } else {
+                openFileEditor(path, item.querySelector('.file-name').textContent);
+            }
+        });
+
+        // Mobile long-press for multi-select
+        item.addEventListener('touchstart', (event) => {
+            event.stopPropagation();
+            isLongPress = false; 
+            isScrolling = false;
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
+            
+            touchTimeout = setTimeout(() => {
+                // NEW: Long press par bhi parent-dir-item ko ignore karo
+                if (!isMultiSelectMode && !item.classList.contains('parent-dir-item')) {
+                    clearSelection();
+                    item.classList.add('selected');
+                    selectedFilePaths.push(item.dataset.path);
+                    isMultiSelectMode = true;
+                    isLongPress = true; 
+                    showNotification('Multi-select mode activated!', 'info');
+                }
+            }, longPressThreshold);
+        });
+
+        item.addEventListener('touchmove', (event) => {
+            const currentX = event.touches[0].clientX;
+            const currentY = event.touches[0].clientY;
+            const deltaX = Math.abs(currentX - touchStartX);
+            const deltaY = Math.abs(currentY - touchStartY);
+            
+            if (deltaX > 10 || deltaY > 10) {
+                clearTimeout(touchTimeout);
+                isScrolling = true;
+            }
+        });
+
+        item.addEventListener('touchend', (event) => {
+            clearTimeout(touchTimeout);
+            if (!isScrolling) {
+                if (isLongPress) {
+                    isLongPress = false;
+                    event.preventDefault();
+                } else if (isMultiSelectMode && !event.target.closest('.file-actions')) {
+                    event.preventDefault();
+                    // NEW: Yahan bhi parent-dir-item ko ignore karo
+                    if (!item.classList.contains('parent-dir-item')) {
+                        updateFileSelection(item, true);
+                    }
+                }
+            }
+            isScrolling = false;
+            isLongPress = false;
+        });
+
+        item.addEventListener('dblclick', (event) => {
             const path = item.dataset.path;
             const type = item.dataset.type;
             if (type === 'folder') {
@@ -845,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 openFileEditor(path, item.querySelector('.file-name').textContent);
             }
         });
-        // Add hover effect
+
         item.addEventListener('mouseenter', () => {
             item.style.transform = 'translateY(-5px) scale(1.02)';
             item.style.boxShadow = '8px 8px 16px rgba(0, 0, 0, 0.1), -8px -8px 16px rgba(255, 255, 255, 0.5)';
@@ -854,6 +1032,13 @@ document.addEventListener('DOMContentLoaded', function() {
             item.style.transform = '';
             item.style.boxShadow = 'var(--neumorphism-shadow)';
         });
+    });
+
+    document.getElementById('fileGrid').addEventListener('click', (event) => {
+        if (event.target.id === 'fileGrid' && isMultiSelectMode) {
+            clearSelection();
+            showNotification('Multi-select mode deactivated.', 'info');
+        }
     });
 
     document.querySelectorAll('.file-actions button').forEach(button => {
@@ -893,7 +1078,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 navigateToPath(path);
             }
         });
-        // Add hover effects
         item.addEventListener('mouseenter', () => {
             item.style.transform = 'scale(1.05)';
         });
@@ -906,7 +1090,6 @@ document.addEventListener('DOMContentLoaded', function() {
         item.addEventListener('click', () => {
             filterFiles(item.dataset.filter);
         });
-        // Add hover effects
         item.addEventListener('mouseenter', () => {
             item.style.transform = 'translateX(6px)';
         });
@@ -948,6 +1131,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportButton = document.getElementById('exportButton');
     if(exportButton) {
         exportButton.addEventListener('click', exportToZip);
+    }
+
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    if(deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', deleteSelectedFiles);
+    }
+
+    const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+    if(downloadSelectedBtn) {
+        downloadSelectedBtn.addEventListener('click', downloadSelectedFiles);
     }
     
     const closeCreateModalBtn = document.getElementById('closeCreateModal');
@@ -1081,7 +1274,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         type: 'cmd'
                     }));
                 } else {
-                    terminalOutput.innerHTML += '\n<span class="terminal-error-text">Connection is not open. Please reopen the terminal.</span>\n';
+                    terminalOutput.innerHTML += '\n<span class="terminal-error-text">Connection is not open. Please try again.</span>\n';
                     terminalOutput.scrollTop = terminalOutput.scrollHeight;
                 }
                 terminalInput.value = '';
@@ -1123,16 +1316,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const codeEditor = document.getElementById('codeEditor');
     if (codeEditor) {
-        // NEW: Calling a dedicated function to keep it DRY
         codeEditor.addEventListener('input', updateEditorState);
     }
 
-    // New resize event listener
     window.addEventListener('resize', () => {
         adjustEditorHeightForKeyboard();
         adjustFileGridHeight();
     });
 
-    // Initial call to adjust file grid height on load
     adjustFileGridHeight();
 });
