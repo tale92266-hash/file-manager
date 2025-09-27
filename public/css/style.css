@@ -30,7 +30,9 @@ html, body {
     overflow: hidden; /* Main page scroll ko band kiya */
 }
 
+/* NEW: Pull-to-refresh ko disable karne ke liye */
 body {
+    overscroll-behavior-y: contain; /* Ya 'none' bhi use kar sakte hain */
     background: linear-gradient(135deg, #f0f4f8, #c8d0e7);
     color: var(--text-color);
     line-height: 1.6;
@@ -269,15 +271,15 @@ body {
 }
 
 .modal-content {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--dark-glass-border);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
+    backdrop-filter: blur(30px) saturate(1.5);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 24px;
     width: 90%;
     max-width: 800px;
     max-height: 80vh;
     overflow: hidden;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
     animation: fadeInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     color: #fff; /* Modal content text color changed to white */
 }

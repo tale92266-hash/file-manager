@@ -79,7 +79,7 @@ function getFileIcon(fileName, isDirectory) {
   }
 }
 
-// NEW: Recursive function to find the latest modified date in a folder
+// UPDATED: Recursive function to find the latest modified date in a folder
 async function getFolderMtime(dirPath) {
   try {
     const stats = await fs.stat(dirPath);
@@ -94,7 +94,13 @@ async function getFolderMtime(dirPath) {
       const itemPath = path.join(dirPath, item);
       try {
         const itemStats = await fs.stat(itemPath);
-        if (itemStats.mtime > latestMtime) {
+        // Agar item ek directory hai, toh recursively uske andar check karo
+        if (itemStats.isDirectory()) {
+            const subFolderMtime = await getFolderMtime(itemPath);
+            if (subFolderMtime > latestMtime) {
+                latestMtime = subFolderMtime;
+            }
+        } else if (itemStats.mtime > latestMtime) {
           latestMtime = itemStats.mtime;
         }
       } catch (err) {
@@ -127,7 +133,7 @@ app.get('/', async (req, res) => {
         }
         
         let mtime = stats.mtime;
-        // NEW: If it's a directory, get the latest modified time from its contents
+        // Check if it's a directory and get the latest modified time from its contents
         if (file.isDirectory()) {
             mtime = await getFolderMtime(filePath);
         }
@@ -145,20 +151,26 @@ app.get('/', async (req, res) => {
       })
     ).then(items => items.filter(item => item !== null)); // Filter out any null items
 
-    // NEW: Advanced Sorting Logic
+    // UPDATED Sorting Logic according to new policy
     fileList.sort((a, b) => {
-      // Step 1: Directories pehle, files baad mein.
+      // Step 1: Folders ko files se pehle group karo
       if (a.isDirectory !== b.isDirectory) {
         return a.isDirectory ? -1 : 1;
       }
-    
-      // Step 2: Apne-apne group mein, non-hidden items pehle, phir hidden items.
+
+      // Step 2: Hidden items ko last mein group karo
       if (a.isHidden !== b.isHidden) {
-        return a.isHidden ? 1 : -1;
+          return a.isHidden ? 1 : -1;
+      }
+
+      // Step 3: Latest modified time (newest first) ke hisaab se sort karo
+      const mtimeDifference = b.mtime.getTime() - a.mtime.getTime();
+      if (mtimeDifference !== 0) {
+        return mtimeDifference;
       }
     
-      // Step 3: Sabhi groups mein, modified date ke hisaab se descending order mein sort karna.
-      return b.mtime.getTime() - a.mtime.getTime();
+      // Step 4: Agar timestamps same hain, toh naam ke hisaab se alphabetically sort karo (tie-breaker)
+      return a.name.localeCompare(b.name);
     });
 
     res.render('index', {
