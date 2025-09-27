@@ -1,5 +1,5 @@
 /*
- * UPDATED: main.js with multi-select action button logic and context menu fix
+ * UPDATED: main.js with multi-select action button logic and context menu click fix
  */
 
 let currentPath = '/';
@@ -1020,6 +1020,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.file-item').forEach(item => {
         // Desktop multi-select with Ctrl/Cmd key
         item.addEventListener('click', (event) => {
+            // FIX: Agar context menu open hai, toh click ko ignore karo aur menu band karo
+            if (activeContextMenu) {
+                event.preventDefault();
+                event.stopPropagation();
+                hideContextMenu();
+                return;
+            }
+
             event.preventDefault();
             if (event.target.closest('.file-actions')) {
                 return;
