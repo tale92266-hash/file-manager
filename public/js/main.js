@@ -1,3 +1,4 @@
+
 let currentPath = '/';
 let hideHidden = true;
 let selectedFilePath = '';
@@ -276,24 +277,40 @@ function createItem(type) {
     });
 }
 
+// NEW HELPER FUNCTION: To manage editor state updates
+function updateEditorState() {
+    const codeEditor = document.getElementById('codeEditor');
+    const saveButton = document.getElementById('saveFileButton');
+    const editorLineCount = document.getElementById('editorLineCount');
+    const unsavedChangesStar = document.getElementById('unsavedChangesStar');
+
+    const lineCount = codeEditor.value.split('\n').length;
+    editorLineCount.textContent = `Lines: ${lineCount}`;
+
+    if (codeEditor.value !== originalContent) {
+        saveButton.disabled = false;
+        unsavedChangesStar.style.display = 'inline';
+    } else {
+        saveButton.disabled = true;
+        unsavedChangesStar.style.display = 'none';
+    }
+}
+
 // Editor modal functions
 function openFileEditor(filePath, fileName) {
     const editorModal = document.getElementById('editorModal');
     const editorTitle = document.getElementById('editorTitle');
     const codeEditor = document.getElementById('codeEditor');
     const saveButton = document.getElementById('saveFileButton');
-    const editorLineCount = document.getElementById('editorLineCount');
     const unsavedChangesStar = document.getElementById('unsavedChangesStar');
 
     selectedFilePath = filePath;
     editorTitle.textContent = fileName;
     editorModal.classList.add('active');
-    unsavedChangesStar.style.display = 'none';
 
     codeEditor.value = '';
     codeEditor.classList.add('loading');
     codeEditor.readOnly = true;
-    editorLineCount.textContent = 'Lines: 0';
 
     // Call the function to adjust editor height as soon as it opens
     adjustEditorHeightForKeyboard();
@@ -305,16 +322,11 @@ function openFileEditor(filePath, fileName) {
             codeEditor.readOnly = false;
 
             if (data.content !== null && data.content !== undefined) {
-                if (data.content.trim() === '') {
-                    codeEditor.value = 'This file is empty. You can start typing to add content.';
-                    originalContent = '';
-                    editorLineCount.textContent = 'Lines: 1';
-                } else {
-                    codeEditor.value = data.content;
-                    originalContent = data.content;
-                    editorLineCount.textContent = `Lines: ${data.content.split('\n').length}`;
-                }
-                saveButton.disabled = true;
+                // FIXED: Yeha se placeholder text remove kiya gaya hai. Ab khali files khali hi rahengi.
+                codeEditor.value = data.content;
+                originalContent = data.content;
+                
+                updateEditorState(); // NEW: Update state after loading content
             } else {
                 codeEditor.value = 'Error loading file content.';
                 showNotification('Error loading file: ' + data.error, 'error');
@@ -352,9 +364,9 @@ function saveFile() {
         if (data.success) {
             showNotification('File saved successfully!', 'success');
             originalContent = content;
-            document.getElementById('saveFileButton').disabled = true;
-            document.getElementById('unsavedChangesStar').style.display = 'none';
-            closeFileEditor();
+            updateEditorState(); // NEW: Update state after saving
+            // FIXED: Ab save hone par editor apne aap band hoga.
+            closeFileEditor(); 
         } else {
             showNotification('Error saving file: ' + data.error, 'error');
         }
@@ -368,25 +380,20 @@ function saveFile() {
 function clearEditor() {
     const codeEditor = document.getElementById('codeEditor');
     codeEditor.value = '';
-    const saveButton = document.getElementById('saveFileButton');
-    saveButton.disabled = codeEditor.value === originalContent;
-    document.getElementById('unsavedChangesStar').style.display = 'none';
+    updateEditorState(); // NEW: Update state after clearing
+    showNotification('Editor cleared!', 'info');
 }
 
 function pasteContent() {
     const codeEditor = document.getElementById('codeEditor');
-    const saveButton = document.getElementById('saveFileButton');
     codeEditor.focus();
     try {
         const success = document.execCommand('paste');
         if (success) {
             showNotification('Pasted content from clipboard!', 'info');
+            updateEditorState(); // NEW: Update state after pasting
         } else {
             throw new Error('execCommand failed');
-        }
-        saveButton.disabled = codeEditor.value === originalContent;
-        if (codeEditor.value !== originalContent) {
-            document.getElementById('unsavedChangesStar').style.display = 'inline';
         }
     } catch (err) {
         showNotification('Failed to paste content. Please use system paste options.', 'error');
@@ -401,7 +408,6 @@ function selectAll() {
 
 function cutContent() {
     const codeEditor = document.getElementById('codeEditor');
-    const saveButton = document.getElementById('saveFileButton');
     
     const tempTextarea = document.createElement('textarea');
     tempTextarea.value = codeEditor.value;
@@ -418,10 +424,7 @@ function cutContent() {
         if (success) {
             codeEditor.value = '';
             showNotification('Content cut to clipboard!', 'info');
-            saveButton.disabled = codeEditor.value === originalContent;
-            if (codeEditor.value !== originalContent) {
-                document.getElementById('unsavedChangesStar').style.display = 'inline';
-            }
+            updateEditorState(); // NEW: Update state after cutting
         } else {
             throw new Error('execCommand failed');
         }
@@ -1078,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         type: 'cmd'
                     }));
                 } else {
-                    terminalOutput.innerHTML += '\n<span class="terminal-error-text">Connection is not open. Please try again.</span>\n';
+                    terminalOutput.innerHTML += '\n<span class="terminal-error-text">Connection is not open. Please reopen the terminal.</span>\n';
                     terminalOutput.scrollTop = terminalOutput.scrollHeight;
                 }
                 terminalInput.value = '';
@@ -1120,24 +1123,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const codeEditor = document.getElementById('codeEditor');
     if (codeEditor) {
-        codeEditor.addEventListener('input', () => {
-            const saveButton = document.getElementById('saveFileButton');
-            if (codeEditor.value !== originalContent) {
-                saveButton.disabled = false;
-            } else {
-                saveButton.disabled = true;
-            }
-            const editorLineCount = document.getElementById('editorLineCount');
-            const lineCount = codeEditor.value.split('\n').length;
-            editorLineCount.textContent = `Lines: ${lineCount}`;
-
-            const unsavedChangesStar = document.getElementById('unsavedChangesStar');
-            if (codeEditor.value === originalContent) {
-                unsavedChangesStar.style.display = 'none';
-            } else {
-                unsavedChangesStar.style.display = 'inline';
-            }
-        });
+        // NEW: Calling a dedicated function to keep it DRY
+        codeEditor.addEventListener('input', updateEditorState);
     }
 
     // New resize event listener

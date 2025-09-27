@@ -73,6 +73,8 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex: 1; /* NEW: Added to make the container flexible */
+    min-width: 0; /* Ensures it can shrink */
 }
 
 .editor-title {
@@ -84,12 +86,17 @@
     color: var(--text-color);
     text-shadow: none;
     letter-spacing: 0.5px;
+    flex: 1; /* NEW: Added to allow the title to shrink */
+    white-space: nowrap; /* NEW: Prevents text from wrapping to a new line */
+    overflow: hidden; /* NEW: Hides any overflowing text */
+    text-overflow: ellipsis; /* NEW: Adds '...' to the end of truncated text */
 }
 
 .editor-title::before {
     content: '⚡';
     font-size: 1.4rem;
     animation: pulse 2s infinite;
+    flex-shrink: 0; /* Prevents icon from shrinking */
 }
 
 @keyframes pulse {
@@ -104,6 +111,7 @@
     line-height: 1;
     display: none;
     animation: pulse-star 1s infinite;
+    flex-shrink: 0; /* Prevents star from shrinking */
 }
 
 @keyframes pulse-star {
@@ -119,12 +127,14 @@
     padding: 0.2rem 0.6rem;
     background: rgba(0, 0, 0, 0.05);
     border-radius: 6px;
+    flex-shrink: 0; /* Prevents info from shrinking */
 }
 
 .header-actions {
     display: flex;
     align-items: center;
     gap: 0.8rem;
+    flex-shrink: 0; /* Prevents action buttons from shrinking */
 }
 
 .header-actions .btn-icon {

@@ -182,7 +182,7 @@
     font-size: 14px;
     color: #e2e8f0;
     line-height: 1.6;
-    overflow: hidden;
+    /* OLD: overflow: hidden; */
     position: relative;
     min-height: 0;
     background: rgba(0, 0, 0, 0.1);
