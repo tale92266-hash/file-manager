@@ -1,5 +1,5 @@
 /*
- * UPDATED: main.js with bug fix for mobile long-press selection
+ * UPDATED: main.js with multi-select action button logic
  */
 
 let currentPath = '/';
@@ -17,6 +17,7 @@ let isLongPress = false; // NEW: Flag to track a successful long press
 let isScrolling = false; // NEW: Flag to track scrolling motion
 let touchStartX = 0; // NEW: To track touch start position
 let touchStartY = 0; // NEW: To track touch start position
+let isActionButtonMenuOpen = false; // NEW: To track if the action menu is open
 
 // Helper function to get the base path from the URL
 function getBasePath() {
@@ -231,11 +232,13 @@ function confirmDelete() {
     });
 }
 
+// UPDATED: deleteSelectedFiles function now called from the new action button menu
 function deleteSelectedFiles() {
     if (selectedFilePaths.length === 0) {
         showNotification('No files selected for deletion.', 'error');
         return;
     }
+    hideActionButtonMenu();
     document.getElementById('headerActionsModal').classList.remove('active');
     const deleteModal = document.getElementById('deleteModal');
     const deleteItemName = document.getElementById('deleteItemName');
@@ -288,11 +291,13 @@ function downloadFile() {
     document.body.removeChild(a);
 }
 
+// UPDATED: downloadSelectedFiles function now called from the new action button menu
 function downloadSelectedFiles() {
     if (selectedFilePaths.length === 0) {
         showNotification('No files selected for download.', 'error');
         return;
     }
+    hideActionButtonMenu();
     document.getElementById('headerActionsModal').classList.remove('active');
     
     const itemsToDownload = selectedFilePaths.map(filePath => {
@@ -651,7 +656,7 @@ function importFromGit() {
         }
     })
     .catch(error => {
-        showNotification('Error importing from Git: ' + error.message, 'error');
+        showNotification('Error: ' + error.message, 'error');
     });
 }
 
@@ -799,15 +804,7 @@ function hideProcessingModal() {
 function showHeaderActionsModal() {
     document.getElementById('headerActionsModal').classList.add('active');
     
-    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
-    const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
-    if (selectedFilePaths.length > 0) {
-        deleteSelectedBtn.disabled = false;
-        downloadSelectedBtn.disabled = false;
-    } else {
-        deleteSelectedBtn.disabled = true;
-        downloadSelectedBtn.disabled = true;
-    }
+    // REMOVED: Delete and Download buttons from here
 }
 
 function showTerminalModal() {
@@ -905,10 +902,12 @@ function adjustFileGridHeight() {
     }
 }
 
+// UPDATED: clearSelection function now hides the action button
 function clearSelection() {
     document.querySelectorAll('.file-item').forEach(el => el.classList.remove('selected'));
     selectedFilePaths = [];
     isMultiSelectMode = false;
+    toggleMultiSelectButtons();
 }
 
 function updateFileSelection(item, isCtrlPressed) {
@@ -928,18 +927,82 @@ function updateFileSelection(item, isCtrlPressed) {
             if (selectedFilePaths.length === 0) {
                 isMultiSelectMode = false;
                 showNotification('Multi-select mode deactivated.', 'info');
+                toggleMultiSelectButtons();
             }
         } else {
             item.classList.add('selected');
             selectedFilePaths.push(filePath);
             isMultiSelectMode = true;
+            toggleMultiSelectButtons();
         }
     } else {
         clearSelection();
         item.classList.add('selected');
         selectedFilePaths.push(filePath);
+        isMultiSelectMode = true;
+        toggleMultiSelectButtons();
     }
 }
+
+// NEW: Function to show/hide the floating action button
+function toggleMultiSelectButtons() {
+    const fabContainer = document.getElementById('multiSelectActions');
+    if (isMultiSelectMode) {
+        fabContainer.classList.remove('hidden');
+    } else {
+        fabContainer.classList.add('hidden');
+        hideActionButtonMenu();
+    }
+}
+
+// NEW: Function to toggle the action button menu
+function toggleActionButtonMenu() {
+    const menu = document.getElementById('multiSelectMenu');
+    isActionButtonMenuOpen = !isActionButtonMenuOpen;
+    menu.classList.toggle('active', isActionButtonMenuOpen);
+}
+
+// NEW: Function to hide the action button menu
+function hideActionButtonMenu() {
+    const menu = document.getElementById('multiSelectMenu');
+    isActionButtonMenuOpen = false;
+    menu.classList.remove('active');
+}
+
+// FIX: `selectAllFiles` function ab sirf visible files ko select karegi
+function selectAllFiles() {
+    hideActionButtonMenu();
+    clearSelection(); // Existing selections ko clear karega
+    
+    const fileItems = document.querySelectorAll('.file-item');
+    let visibleItemsCount = 0;
+    
+    fileItems.forEach(item => {
+        // Parent directory ko ignore karega
+        if (item.classList.contains('parent-dir-item')) {
+            return;
+        }
+
+        // Sirf un items ko select karega jo `display: flex` ya `display: block` hain
+        const computedStyle = window.getComputedStyle(item);
+        if (computedStyle.display !== 'none' && computedStyle.visibility !== 'hidden') {
+            item.classList.add('selected');
+            selectedFilePaths.push(item.dataset.path);
+            visibleItemsCount++;
+        }
+    });
+
+    if (visibleItemsCount > 0) {
+        isMultiSelectMode = true;
+        toggleMultiSelectButtons();
+        showNotification(`Selected all ${visibleItemsCount} visible files!`, 'info');
+    } else {
+        isMultiSelectMode = false;
+        toggleMultiSelectButtons();
+        showNotification('No files to select.', 'info');
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.file-item').forEach(item => {
@@ -980,6 +1043,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     isMultiSelectMode = true;
                     isLongPress = true; 
                     showNotification('Multi-select mode activated!', 'info');
+                    toggleMultiSelectButtons();
                 }
             }, longPressThreshold);
         });
@@ -1050,6 +1114,16 @@ document.addEventListener('DOMContentLoaded', function() {
             showContextMenu(event, path, name);
         });
     });
+
+    // NEW: Action button and menu event listeners
+    const multiSelectFab = document.getElementById('multiSelectActions');
+    const multiSelectMenu = document.getElementById('multiSelectMenu');
+    document.getElementById('multiSelectFab').addEventListener('click', toggleActionButtonMenu);
+    
+    document.getElementById('selectAllFilesButton').addEventListener('click', selectAllFiles);
+    document.getElementById('downloadSelectedButton').addEventListener('click', downloadSelectedFiles);
+    document.getElementById('deleteSelectedButton').addEventListener('click', deleteSelectedFiles);
+    document.getElementById('cancelSelectionButton').addEventListener('click', clearSelection);
 
     document.getElementById('renameMenuItem').addEventListener('click', renameFile);
     document.getElementById('deleteMenuItem').addEventListener('click', deleteFile);
@@ -1133,15 +1207,7 @@ document.addEventListener('DOMContentLoaded', function() {
         exportButton.addEventListener('click', exportToZip);
     }
 
-    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
-    if(deleteSelectedBtn) {
-        deleteSelectedBtn.addEventListener('click', deleteSelectedFiles);
-    }
-
-    const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
-    if(downloadSelectedBtn) {
-        downloadSelectedBtn.addEventListener('click', downloadSelectedFiles);
-    }
+    // REMOVED: Delete Selected and Download Selected button listeners from here
     
     const closeCreateModalBtn = document.getElementById('closeCreateModal');
     if (closeCreateModalBtn) {
@@ -1295,6 +1361,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!sidebar.contains(event.target) && !sidebarToggleBtn.contains(event.target) && sidebar.classList.contains('active')) {
             sidebar.classList.remove('active');
+        }
+
+        // NEW: Hide the action menu if clicked outside
+        const actionButtonContainer = document.getElementById('multiSelectActions');
+        if (actionButtonContainer && !actionButtonContainer.contains(event.target)) {
+            hideActionButtonMenu();
         }
     });
 
