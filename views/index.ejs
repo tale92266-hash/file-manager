@@ -103,16 +103,16 @@
                     </button>
                 </div>
             </header>
+            
+            <nav aria-label="breadcrumb" class="breadcrumb">
+                <a href="#" class="breadcrumb-item" data-path="/"><i class="bi bi-house"></i></a>
+                <% pathSegments.forEach(function(segment, idx) { %>
+                    <span class="separator">/</span>
+                    <a href="#" class="breadcrumb-item" data-path="/<%= pathSegments.slice(0, idx + 1).join('/') %>"><%= segment %></a>
+                <% }); %>
+            </nav>
 
             <main class="main-content">
-                <nav aria-label="breadcrumb" class="breadcrumb">
-                    <a href="#" class="breadcrumb-item" data-path="/"><i class="bi bi-house"></i></a>
-                    <% pathSegments.forEach(function(segment, idx) { %>
-                        <span class="separator">/</span>
-                        <a href="#" class="breadcrumb-item" data-path="/<%= pathSegments.slice(0, idx + 1).join('/') %>"><%= segment %></a>
-                    <% }); %>
-                </nav>
-
                 <div class="file-grid" id="fileGrid" role="list" aria-label="List of files and folders">
                     <% if(currentPath !== '/') { %>
                         <div class="file-item parent-dir-item" role="listitem" data-path="<%= parentPath %>" data-type="folder">
@@ -175,10 +175,9 @@
             <%- include('partials/delete-modal') %>
             <%- include('partials/terminal-modal') %>
         </div>
+        <%- include('partials/footer') %>
     </div>
     
-    <%- include('partials/footer') %>
-
     <script src="/js/main.js"></script>
 </body>
 </html>
