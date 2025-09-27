@@ -1,18 +1,18 @@
 /* File List - Neo-Glassmorphism */
 .file-grid {
     display: grid;
-    gap: 1.5rem;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem; /* Gap kam kiya */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Size chhota kiya */
 }
 
 .file-item {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.8rem; /* Gap kam kiya */
     background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 1rem 1.5rem;
+    border-radius: 12px; /* Border radius kam kiya */
+    padding: 0.8rem 1rem; /* Padding kam kiya */
     cursor: pointer;
     position: relative;
     box-shadow: var(--neumorphism-shadow);
@@ -23,8 +23,8 @@
 }
 
 .file-item:hover {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.1), -8px -8px 16px rgba(255, 255, 255, 0.5);
+    transform: translateY(-3px) scale(1.02); /* Hover effect thoda kam kiya */
+    box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.5);
     background-color: rgba(255, 255, 255, 0.7);
 }
 
@@ -52,7 +52,7 @@
 
 .directory-item:hover {
     background: rgba(52, 152, 219, 0.2);
-    transform: translateY(-5px) scale(1.02);
+    transform: translateY(-3px) scale(1.02); /* Hover effect kam kiya */
     box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1), -4px -4px 10px rgba(255, 255, 255, 0.4);
 }
 
@@ -62,8 +62,8 @@
 }
 
 .file-item i {
-    font-size: 2rem;
-    min-width: 40px;
+    font-size: 1.5rem; /* Icon size kam kiya */
+    min-width: 30px; /* Icon width kam kiya */
     text-align: center;
     transition: transform 0.3s ease;
 }
@@ -79,11 +79,11 @@
 .file-name {
     word-break: break-word;
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1rem; /* Font size kam kiya */
 }
 
 .file-meta {
-    font-size: 0.8rem;
+    font-size: 0.7rem; /* Font size kam kiya */
     color: #999;
     margin-top: 0.2rem;
 }
@@ -101,7 +101,7 @@
     border: none;
     cursor: pointer;
     color: #555;
-    font-size: 1.5rem;
+    font-size: 1.2rem; /* Icon size kam kiya */
     padding: 0 4px;
     transition: color 0.2s ease, transform 0.2s ease;
 }
