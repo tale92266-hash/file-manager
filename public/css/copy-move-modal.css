@@ -1,0 +1,46 @@
+/*
+ * NEW: copy-move-modal.css
+ */
+#pasteModal .modal-content {
+    max-width: 400px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+#pasteModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+#pasteModal .modal-body {
+    padding: 1rem 0;
+}
+
+#pasteModal .loading-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#pasteModal .loading-spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid #fff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+#pasteModalTitle {
+    color: var(--text-color);
+}
+
+#pasteModalStatus {
+    color: var(--text-color);
+    font-size: 1rem;
+    margin-top: 0.5rem;
+}

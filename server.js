@@ -259,6 +259,37 @@ app.post('/rename', async (req, res) => {
   }
 });
 
+// NEW: Endpoint to copy multiple files/folders
+app.post('/copy', async (req, res) => {
+    try {
+        const { sourcePaths, destPath } = req.body;
+        for (const sourcePath of sourcePaths) {
+            const itemName = path.basename(sourcePath);
+            const newPath = path.join(destPath, itemName);
+            await fs.copy(sourcePath, newPath, { overwrite: true });
+        }
+        res.json({ success: true, message: `${sourcePaths.length} items copied successfully!` });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// NEW: Endpoint to move multiple files/folders
+app.post('/move', async (req, res) => {
+    try {
+        const { sourcePaths, destPath } = req.body;
+        for (const sourcePath of sourcePaths) {
+            const itemName = path.basename(sourcePath);
+            const newPath = path.join(destPath, itemName);
+            await fs.move(sourcePath, newPath, { overwrite: true });
+        }
+        res.json({ success: true, message: `${sourcePaths.length} items moved successfully!` });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 app.get('/download', (req, res) => {
   const filePath = req.query.path;
   res.download(filePath, (err) => {

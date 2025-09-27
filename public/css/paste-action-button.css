@@ -1,0 +1,83 @@
+/* NEW: paste-action-button.css */
+.paste-button-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 998;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.paste-button-container.hidden {
+    transform: translateY(100px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.paste-button, .cancel-button {
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: var(--neumorphism-shadow);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.paste-button {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+.paste-button:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3), 0 0 15px rgba(46, 204, 113, 0.7);
+}
+
+.cancel-button {
+    background: #e0e0e0;
+    color: var(--text-color);
+}
+
+.cancel-button:hover {
+    transform: scale(1.05) translateY(-2px);
+    background: #e7e7e7;
+}
+
+/* Animations for show/hide */
+.paste-button-container:not(.hidden) {
+    animation: slideInUp 0.3s ease-out forwards;
+}
+
+.paste-button-container.hidden {
+    animation: slideOutDown 0.3s ease-in forwards;
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutDown {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+}

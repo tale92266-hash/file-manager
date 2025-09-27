@@ -450,7 +450,7 @@ body {
 }
 
 /* Utilities */
-.hidden-file.hide {
+.hidden {
     display: none !important;
 }
 

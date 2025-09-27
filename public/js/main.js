@@ -18,6 +18,7 @@ let isScrolling = false; // NEW: Flag to track scrolling motion
 let touchStartX = 0; // NEW: To track touch start position
 let touchStartY = 0; // NEW: To track touch start position
 let isActionButtonMenuOpen = false; // NEW: To track if the action menu is open
+let hasItemsToPaste = false; // NEW: To track if there are items in the paste buffer
 
 // Helper function to get the base path from the URL
 function getBasePath() {
@@ -78,9 +79,6 @@ function showContextMenu(event, filePath, fileName) {
     event.preventDefault();
     event.stopPropagation();
     
-    // FIX: Context menu click par bhi purane selections ko clear karna
-    clearSelection();
-
     selectedFilePaths = [];
     selectedFilePaths.push(filePath);
     selectedFileName = fileName;
@@ -668,7 +666,8 @@ function importFromGit() {
         }
     })
     .catch(error => {
-        showNotification('Error: ' + error.message, 'error');
+        hideProcessingModal();
+        showNotification('Error during upload: ' + error.message, 'error');
     });
 }
 
@@ -1039,8 +1038,118 @@ function selectAllFiles() {
     }
 }
 
+// NEW: Function to set copy/move state and store paths
+function setCopyMoveState(actionType) {
+    hideContextMenu();
+    hideActionButtonMenu();
+    
+    if (selectedFilePaths.length === 0) {
+        showNotification('Please select at least one item to ' + actionType + '.', 'error');
+        return;
+    }
+    
+    // `localStorage` mein state store karein
+    localStorage.setItem('fileManagerAction', JSON.stringify({
+        type: actionType,
+        paths: selectedFilePaths
+    }));
+    
+    // Has items to paste state ko update karein aur paste buttons show karein
+    hasItemsToPaste = true;
+    togglePasteButtons();
+
+    // Notification show karein lekin selection ko clear na karein
+    showNotification(`${selectedFilePaths.length} items selected to ${actionType}. Navigate to destination and paste.`, 'success');
+}
+
+// NEW: Function to show paste/move modal
+function showPasteModal() {
+    const pasteState = JSON.parse(localStorage.getItem('fileManagerAction'));
+    if (!pasteState || pasteState.paths.length === 0) {
+        showNotification('No items to paste. Please select items first.', 'error');
+        return;
+    }
+    
+    const pasteModal = document.getElementById('pasteModal');
+    const pasteModalTitle = document.getElementById('pasteModalTitle');
+    const pasteModalStatus = document.getElementById('pasteModalStatus');
+    
+    if (pasteState.type === 'copy') {
+        pasteModalTitle.textContent = 'Copying...';
+        pasteModalStatus.textContent = `Copying ${pasteState.paths.length} items to ` + getBasePath();
+    } else if (pasteState.type === 'move') {
+        pasteModalTitle.textContent = 'Moving...';
+        pasteModalStatus.textContent = `Moving ${pasteState.paths.length} items to ` + getBasePath();
+    }
+    
+    pasteModal.classList.add('active');
+    performPaste(pasteState);
+}
+
+// NEW: Function to perform paste operation
+function performPaste(pasteState) {
+    const { type, paths } = pasteState;
+    const destPath = getBasePath();
+    
+    fetch(`/${type}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            sourcePaths: paths,
+            destPath: destPath
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            hideProcessingModal();
+            showNotification(data.message, 'success');
+            localStorage.removeItem('fileManagerAction');
+            // FIX: Selection ko ab yahan clear kiya gaya hai, jab operation successfully complete ho jaye.
+            clearSelection();
+            togglePasteButtons();
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            hideProcessingModal();
+            showNotification('Error: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        hideProcessingModal();
+        showNotification('Error: ' + error.message, 'error');
+    });
+}
+
+// NEW: Function to handle the paste operation when user clicks paste button
+function handlePasteButtonClick() {
+    showPasteModal();
+}
+
+// NEW: Function to check for items to paste on page load
+function checkPasteStatus() {
+    const pasteState = localStorage.getItem('fileManagerAction');
+    if (pasteState) {
+        hasItemsToPaste = true;
+    } else {
+        hasItemsToPaste = false;
+    }
+}
+
+// NEW: Function to toggle paste buttons in the header
+function togglePasteButtons() {
+    const pasteButtonContainer = document.getElementById('pasteActionButtons');
+    if (hasItemsToPaste) {
+        pasteButtonContainer.classList.remove('hidden');
+    } else {
+        pasteButtonContainer.classList.add('hidden');
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
+    // NEW: Check paste status on page load and update UI
+    checkPasteStatus();
+    togglePasteButtons();
+
     document.querySelectorAll('.file-item').forEach(item => {
         // Desktop multi-select with Ctrl/Cmd key
         item.addEventListener('click', (event) => {
@@ -1168,7 +1277,32 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('downloadSelectedButton').addEventListener('click', downloadSelectedFiles);
     document.getElementById('deleteSelectedButton').addEventListener('click', deleteSelectedFiles);
     document.getElementById('cancelSelectionButton').addEventListener('click', clearSelection);
+    // NEW: Copy/Move listeners for multi-select
+    document.getElementById('copySelectedButton').addEventListener('click', () => setCopyMoveState('copy'));
+    document.getElementById('moveSelectedButton').addEventListener('click', () => setCopyMoveState('move'));
 
+    // NEW: Copy/Move listeners for context menu
+    document.getElementById('copyMenuItem').addEventListener('click', () => setCopyMoveState('copy'));
+    document.getElementById('moveMenuItem').addEventListener('click', () => setCopyMoveState('move'));
+    
+    // NEW: Paste button for pasting
+    const pasteButton = document.getElementById('pasteButton');
+    if (pasteButton) {
+        pasteButton.addEventListener('click', handlePasteButtonClick);
+    }
+
+    // NEW: Cancel Paste button
+    const cancelPasteButton = document.getElementById('cancelPasteButton');
+    if (cancelPasteButton) {
+        cancelPasteButton.addEventListener('click', () => {
+            localStorage.removeItem('fileManagerAction');
+            hasItemsToPaste = false;
+            togglePasteButtons();
+            clearSelection();
+            showNotification('Paste operation cancelled.', 'info');
+        });
+    }
+    
     document.getElementById('renameMenuItem').addEventListener('click', renameFile);
     document.getElementById('deleteMenuItem').addEventListener('click', deleteFile);
     document.getElementById('copyPathMenuItem').addEventListener('click', copyPath);
@@ -1310,11 +1444,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearAllButton = document.getElementById('clearAllButton');
     if (clearAllButton) {
         clearAllButton.addEventListener('click', clearEditor);
-    }
-
-    const pasteButton = document.getElementById('pasteButton');
-    if (pasteButton) {
-        pasteButton.addEventListener('click', pasteContent);
     }
 
     const selectAllButton = document.getElementById('selectAllButton');
