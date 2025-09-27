@@ -1,5 +1,5 @@
 /*
- * NEW: action-button.css
+ * UPDATED: action-button.css
  * Multi-Select Floating Action Button and Menu Styles
  */
 
@@ -38,12 +38,26 @@
     box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3), 0 0 15px rgba(46, 204, 113, 0.7);
 }
 
+/* NEW: FAB rotation animation */
+.fab-button.fab-button-active i {
+    animation: fabRotate 0.5s ease-out forwards;
+}
+
+@keyframes fabRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(135deg);
+    }
+}
+
 .action-menu {
     display: none;
     flex-direction: column;
     gap: 10px;
     margin-bottom: 15px;
-    animation: fadeInSlideUp 0.3s ease-out forwards;
+    /* animation: fadeInSlideUp 0.3s ease-out forwards;  OLD animation ko remove kiya */
     transform-origin: bottom right;
 }
 
@@ -66,7 +80,29 @@
     align-items: center;
     gap: 10px;
     transition: all 0.2s ease;
+    
+    /* NEW: Staggered animation properties */
+    opacity: 0;
+    transform: translateY(20px);
 }
+
+/* NEW: Class for staggered animation */
+.action-menu-item.animate-in {
+    animation: staggeredFadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    animation-delay: var(--delay);
+}
+
+@keyframes staggeredFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 
 .action-menu-item:hover {
     background: rgba(255, 255, 255, 0.4);
@@ -91,15 +127,4 @@
 
 .action-menu-item.btn-danger:hover {
     background: rgba(231, 76, 60, 0.4);
-}
-
-@keyframes fadeInSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }

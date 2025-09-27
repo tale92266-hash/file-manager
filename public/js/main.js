@@ -956,7 +956,7 @@ function updateFileSelection(item, isCtrlPressed) {
     }
 }
 
-// NEW: Function to show/hide the floating action button
+// UPDATED: Function to show/hide the floating action button with animations
 function toggleMultiSelectButtons() {
     const fabContainer = document.getElementById('multiSelectActions');
     if (isMultiSelectMode) {
@@ -967,18 +967,42 @@ function toggleMultiSelectButtons() {
     }
 }
 
-// NEW: Function to toggle the action button menu
+// UPDATED: Function to toggle the action button menu with animations
 function toggleActionButtonMenu() {
     const menu = document.getElementById('multiSelectMenu');
+    const fabButton = document.getElementById('multiSelectFab');
     isActionButtonMenuOpen = !isActionButtonMenuOpen;
-    menu.classList.toggle('active', isActionButtonMenuOpen);
+
+    if (isActionButtonMenuOpen) {
+        menu.classList.add('active');
+        fabButton.classList.add('fab-button-active');
+        const menuItems = menu.querySelectorAll('.action-menu-item');
+        menuItems.forEach((item, index) => {
+            // Delay based on index for a staggered effect
+            item.style.setProperty('--delay', `${index * 0.05}s`);
+            item.classList.add('animate-in');
+        });
+    } else {
+        menu.classList.remove('active');
+        fabButton.classList.remove('fab-button-active');
+        const menuItems = menu.querySelectorAll('.action-menu-item');
+        menuItems.forEach(item => {
+            item.classList.remove('animate-in');
+        });
+    }
 }
 
 // NEW: Function to hide the action button menu
 function hideActionButtonMenu() {
     const menu = document.getElementById('multiSelectMenu');
+    const fabButton = document.getElementById('multiSelectFab');
     isActionButtonMenuOpen = false;
     menu.classList.remove('active');
+    fabButton.classList.remove('fab-button-active');
+    const menuItems = menu.querySelectorAll('.action-menu-item');
+    menuItems.forEach(item => {
+        item.classList.remove('animate-in');
+    });
 }
 
 // FIX: `selectAllFiles` function ab sirf visible files ko select karegi
