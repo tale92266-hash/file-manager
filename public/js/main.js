@@ -1,5 +1,5 @@
 /*
- * UPDATED: main.js with multi-select action button logic
+ * UPDATED: main.js with multi-select action button logic and context menu fix
  */
 
 let currentPath = '/';
@@ -78,6 +78,9 @@ function showContextMenu(event, filePath, fileName) {
     event.preventDefault();
     event.stopPropagation();
     
+    // FIX: Context menu click par bhi purane selections ko clear karna
+    clearSelection();
+
     selectedFilePaths = [];
     selectedFilePaths.push(filePath);
     selectedFileName = fileName;
@@ -129,11 +132,20 @@ function showContextMenu(event, filePath, fileName) {
     });
 }
 
+// FIX: hideContextMenu function ko update kiya gaya hai
 function hideContextMenu() {
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
         contextMenu.classList.remove('active');
         activeContextMenu = null;
+        
+        // Agar multi-select mode active nahi hai, toh selection hatana hai
+        if (!isMultiSelectMode) {
+            document.querySelectorAll('.file-item.selected').forEach(item => {
+                item.classList.remove('selected');
+            });
+            selectedFilePaths = [];
+        }
     }
 }
 
