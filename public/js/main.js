@@ -99,7 +99,14 @@ function showContextMenu(event, filePath, fileName) {
         activeContextMenu = contextMenu;
     }
     
-    document.addEventListener('click', hideContextMenu, { once: true });
+    // UPDATED: A new click handler to hide the menu and stop propagation
+    document.addEventListener('click', function handleDocClick(e) {
+        if (contextMenu && !contextMenu.contains(e.target)) {
+            hideContextMenu();
+            e.stopPropagation(); // Stop the click event from bubbling up
+        }
+        document.removeEventListener('click', handleDocClick);
+    });
 }
 
 function hideContextMenu() {
@@ -117,6 +124,15 @@ function renameFile() {
     
     renameNewNameInput.value = selectedFileName;
     renameModal.classList.add('active');
+
+    // UPDATED: Fix for clicking outside and triggering action below.
+    document.addEventListener('click', function handleRenameClick(e) {
+        if (!renameModal.contains(e.target)) {
+            renameModal.classList.remove('active');
+            e.stopPropagation(); // Stop the click event from bubbling up
+        }
+        document.removeEventListener('click', handleRenameClick);
+    });
 }
 
 function saveRenamedFile() {
