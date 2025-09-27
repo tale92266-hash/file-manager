@@ -789,6 +789,27 @@ function adjustEditorHeightForKeyboard() {
     }
 }
 
+// NEW FUNCTION: File grid height adjustment for mobile keyboard
+function adjustFileGridHeight() {
+    if (window.innerWidth <= 768) {
+        const mainContent = document.querySelector('.main-content');
+        const header = document.querySelector('.app-header');
+        const breadcrumb = document.querySelector('.breadcrumb');
+        const footer = document.querySelector('.app-footer');
+        
+        if (mainContent && header && breadcrumb && footer) {
+            const totalNonContentHeight = header.offsetHeight + breadcrumb.offsetHeight + footer.offsetHeight;
+            const newHeight = window.innerHeight - totalNonContentHeight - 20; // Thoda extra space
+            mainContent.style.maxHeight = `${newHeight}px`;
+        }
+    } else {
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.style.maxHeight = 'none'; // Revert to default on desktop
+        }
+    }
+}
+
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
@@ -1104,5 +1125,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // New resize event listener
-    window.addEventListener('resize', adjustEditorHeightForKeyboard);
+    window.addEventListener('resize', () => {
+        adjustEditorHeightForKeyboard();
+        adjustFileGridHeight();
+    });
+
+    // Initial call to adjust file grid height on load
+    adjustFileGridHeight();
 });
