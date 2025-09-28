@@ -79,10 +79,8 @@ function showContextMenu(event, filePath, fileName) {
     event.preventDefault();
     event.stopPropagation();
     
-    // FIX: Context menu khulne se pehle, baaki sab files ko deselect karein
-    clearSelection();
-    
     // Sirf current file ko select karein
+    clearSelection();
     const currentItem = event.currentTarget.closest('.file-item');
     if (currentItem) {
         currentItem.classList.add('selected');
