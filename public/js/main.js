@@ -1058,8 +1058,9 @@ function setCopyMoveState(actionType) {
     hasItemsToPaste = true;
     togglePasteButtons();
 
-    // Notification show karein lekin selection ko clear na karein
+    // Notification show karein aur selection ko clear karein
     showNotification(`${selectedFilePaths.length} items selected to ${actionType}. Navigate to destination and paste.`, 'success');
+    clearSelection();
 }
 
 // NEW: Function to show paste/move modal
