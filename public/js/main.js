@@ -1,5 +1,5 @@
 /*
- * UPDATED: main.js with multi-select action button logic and context menu click fix
+ * UPDATED: main.js with permanent fix for the rename modal issue
  */
 
 let currentPath = '/';
@@ -123,7 +123,6 @@ function showContextMenu(event, filePath, fileName) {
     document.addEventListener('click', function handleDocClick(e) {
         if (contextMenu && !contextMenu.contains(e.target)) {
             hideContextMenu();
-            e.stopPropagation();
         }
         document.removeEventListener('click', handleDocClick);
     });
@@ -138,6 +137,7 @@ function hideContextMenu() {
     }
 }
 
+// FIX: Removed the conflicting event listener from here
 function renameFile() {
     hideContextMenu();
     const renameModal = document.getElementById('renameModal');
@@ -153,14 +153,6 @@ function renameFile() {
 
     renameNewNameInput.value = selectedFileName;
     renameModal.classList.add('active');
-
-    document.addEventListener('click', function handleRenameClick(e) {
-        if (!renameModal.contains(e.target)) {
-            renameModal.classList.remove('active');
-            e.stopPropagation();
-        }
-        document.removeEventListener('click', handleRenameClick);
-    });
 }
 
 function saveRenamedFile() {
