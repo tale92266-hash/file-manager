@@ -79,19 +79,20 @@ function showContextMenu(event, filePath, fileName) {
     event.preventDefault();
     event.stopPropagation();
     
-    selectedFilePaths = [];
-    selectedFilePaths.push(filePath);
-    selectedFileName = fileName;
-    selectedFileType = event.currentTarget.closest('.file-item').dataset.type;
-
-    const fileItems = document.querySelectorAll('.file-item');
-    fileItems.forEach(item => {
-        item.classList.remove('selected');
-        if (item.dataset.path === filePath) {
-            item.classList.add('selected');
-        }
-    });
+    // FIX: Context menu khulne se pehle, baaki sab files ko deselect karein
+    clearSelection();
     
+    // Sirf current file ko select karein
+    const currentItem = event.currentTarget.closest('.file-item');
+    if (currentItem) {
+        currentItem.classList.add('selected');
+        selectedFilePaths = [filePath];
+        selectedFileName = fileName;
+        selectedFileType = currentItem.dataset.type;
+        isMultiSelectMode = false;
+        toggleMultiSelectButtons();
+    }
+
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
         const windowWidth = window.innerWidth;
@@ -130,20 +131,12 @@ function showContextMenu(event, filePath, fileName) {
     });
 }
 
-// FIX: hideContextMenu function ko update kiya gaya hai
+// FIX: hideContextMenu function se selection clear karne wali lines hata di hain
 function hideContextMenu() {
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
         contextMenu.classList.remove('active');
         activeContextMenu = null;
-        
-        // Agar multi-select mode active nahi hai, toh selection hatana hai
-        if (!isMultiSelectMode) {
-            document.querySelectorAll('.file-item.selected').forEach(item => {
-                item.classList.remove('selected');
-            });
-            selectedFilePaths = [];
-        }
     }
 }
 
@@ -1287,10 +1280,21 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('moveMenuItem').addEventListener('click', () => setCopyMoveState('move'));
     
     // NEW: Paste button for pasting
-    const pasteButton = document.getElementById('pasteButton');
-    if (pasteButton) {
-        pasteButton.addEventListener('click', handlePasteButtonClick);
-    }
+    // OLD: const pasteButton = document.getElementById('pasteButton');
+    // OLD: if (pasteButton) {
+    // OLD:     pasteButton.addEventListener('click', handlePasteButtonClick);
+    // OLD: }
+
+    // UPDATED: Event delegation for pasteButton
+    document.body.addEventListener('click', function(event) {
+        if (event.target.closest('#pasteButton')) {
+            handlePasteButtonClick();
+        }
+        // Handle closePasteModal as well using event delegation
+        if (event.target.closest('#closePasteModal')) {
+            document.getElementById('pasteModal').classList.remove('active');
+        }
+    });
 
     // NEW: Cancel Paste button
     const cancelPasteButton = document.getElementById('cancelPasteButton');
